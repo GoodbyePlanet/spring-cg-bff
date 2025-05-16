@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  oauth_db:
+    image: mariadb:latest
+    container_name: oauth_db
+    environment:
+      MARIADB_ROOT_PASSWORD: mysecretpassword
+      MARIADB_DATABASE: oauth_db
+      MARIADB_USER: oauth
+      MARIADB_PASSWORD: oauth
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  auth-server:
+    build:
+      context: ./auth-server
+    container_name: auth-server
+    ports:
+      - "9000:9000"
+    depends_on:
+      oauth_db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://oauth_db:3306/oauth_db
+      SPRING_DATASOURCE_USERNAME: oauth
+      SPRING_DATASOURCE_PASSWORD: oauth
+    networks:
+      - default
+
+  gateway:
+    build:
+      context: ./gateway
+    container_name: gateway
+    ports:
+      - "8081:8081"  # Host:Container
+    expose:
+      - "8081"
+    depends_on:
+      - auth-server
+    networks:
+      - default
+
+  secure-resource:
+    build:
+      context: ./secure-resource
+    container_name: secure-resource
+    ports:
+      - "9100:9100"
+    expose:
+      - "9100"
+    depends_on:
+      - auth-server
+    networks:
+      - default
+
+volumes:
+  mariadb_data:
+
+networks:
+  default:
+
+#  postgres:
+#    image: postgres:latest
+#    container_name: postgresDB
+#    environment:
+#      POSTGRES_PASSWORD: mysecretpassword
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U postgres"]
+#      interval: 5s
+#      timeout: 5s
+#      retries: 5
+
+#  uaa:
+#    image: cloudfoundry/uaa
+#    container_name: uaa
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      UAA_CONFIG_URL: file:/uaa/uaa.yml
+#    volumes:
+#      - ./uaa.yml:/uaa/uaa.yml
+#    networks:
+#      - default

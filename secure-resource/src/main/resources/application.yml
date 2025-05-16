@@ -1,0 +1,18 @@
+server:
+  port: 9100
+
+spring:
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          jwk-set-uri: http://auth-server:9000/oauth2/jwks
+
+logging:
+  level:
+    root: INFO
+    com.scg.service: TRACE
+    org.springframework.web: INFO
+    org.springframework.web.HttpLogging: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
