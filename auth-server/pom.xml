@@ -22,12 +22,6 @@
         <start-class>com.app.auth_server.AuthServerApplication</start-class>
     </properties>
     <dependencies>
-        <!--		<dependency>-->
-        <!--			<groupId>org.springframework.boot</groupId>-->
-        <!--			<artifactId>spring-boot-starter-oauth2-authorization-server</artifactId>-->
-        <!--			<version>3.4.2</version>-->
-        <!--		</dependency>-->
-        <!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-oauth2-authorization-server -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-oauth2-authorization-server</artifactId>

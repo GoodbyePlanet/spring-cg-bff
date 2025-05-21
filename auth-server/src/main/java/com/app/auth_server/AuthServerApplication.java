@@ -22,9 +22,9 @@ public class AuthServerApplication {
     @Bean
     ApplicationRunner runner(RegisteredClientRepository registeredClientRepository) {
         return args -> {
-            RegisteredClient existingConfidentialClient = registeredClientRepository.findByClientId("gateway");
+            RegisteredClient existingGatewayClient = registeredClientRepository.findByClientId("gateway");
 
-            if (existingConfidentialClient == null) {
+            if (existingGatewayClient == null) {
                 RegisteredClient confidentialClient = RegisteredClient.withId(UUID.randomUUID().toString())
                         .clientId("gateway")
                         .clientSecret("{noop}secret")
