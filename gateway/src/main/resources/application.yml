@@ -1,6 +1,10 @@
 server:
   port: 8081
 
+oauth2:
+  secure-resource-url: http://secure-resource:9100
+  auth-server-url: http://auth-server:9000
+
 logging:
   level:
     root: INFO

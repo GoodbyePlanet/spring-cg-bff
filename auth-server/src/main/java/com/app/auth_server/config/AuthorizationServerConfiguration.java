@@ -5,7 +5,7 @@ import com.app.auth_server.jpa.service.authorizationconsent.JpaAuthorizationCons
 import com.app.auth_server.jpa.service.client.JpaClientRepository;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -28,12 +28,22 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
 public class AuthorizationServerConfiguration {
 
     private final JpaAuthorizationService authorizationService;
     private final JpaAuthorizationConsentService authorizationConsentService;
     private final JpaClientRepository registeredClientRepository;
+    private final String authServerUrl;
+
+    public AuthorizationServerConfiguration(JpaAuthorizationService authorizationService,
+                                            JpaAuthorizationConsentService authorizationConsentService,
+                                            JpaClientRepository registeredClientRepository,
+                                            @Value("${oauth2.auth-server-url}") String authServerUrl) {
+        this.authorizationService = authorizationService;
+        this.authorizationConsentService = authorizationConsentService;
+        this.registeredClientRepository = registeredClientRepository;
+        this.authServerUrl = authServerUrl;
+    }
 
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -88,7 +98,7 @@ public class AuthorizationServerConfiguration {
 
     @Bean
     public AuthorizationServerSettings authorizationServerSettings() {
-        return AuthorizationServerSettings.builder().issuer("http://auth-server:9000").build();
+        return AuthorizationServerSettings.builder().issuer(authServerUrl).build();
     }
 
     @Bean

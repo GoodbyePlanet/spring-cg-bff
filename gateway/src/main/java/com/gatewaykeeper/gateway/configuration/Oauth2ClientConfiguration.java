@@ -1,5 +1,6 @@
 package com.gatewaykeeper.gateway.configuration;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -16,6 +17,12 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @EnableWebFluxSecurity
 public class Oauth2ClientConfiguration {
 
+    private final String authServerUrl;
+
+    public Oauth2ClientConfiguration(@Value("${oauth2.auth-server-url}") String authServerUrl) {
+        this.authServerUrl = authServerUrl;
+    }
+
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
         http.authorizeExchange(auth -> auth
@@ -29,7 +36,7 @@ public class Oauth2ClientConfiguration {
 
     @Bean
     public ReactiveClientRegistrationRepository clientRegistrationRepository() {
-        ClientRegistration gateway = ClientRegistrations.fromIssuerLocation("http://auth-server:9000")
+        ClientRegistration gateway = ClientRegistrations.fromIssuerLocation(authServerUrl)
                 .clientId("gateway")
                 .clientSecret("secret")
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
