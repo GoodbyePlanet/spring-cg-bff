@@ -11,12 +11,15 @@ import org.springframework.context.annotation.Configuration;
 public class RouteConfiguration {
 
     private final String secureResourceUrl;
+    private final String authServerUrl;
     private final TokenRelayGatewayFilterFactory tokenRelay;
 
     public RouteConfiguration(TokenRelayGatewayFilterFactory tokenRelay,
-                              @Value("${oauth2.secure-resource-url}") String secureResourceUrl) {
+                              @Value("${oauth2.secure-resource-url}") String secureResourceUrl,
+                              @Value("${oauth2.auth-server-url}") String authServerUrl) {
         this.tokenRelay = tokenRelay;
         this.secureResourceUrl = secureResourceUrl;
+        this.authServerUrl = authServerUrl;
     }
 
     @Bean
@@ -26,6 +29,9 @@ public class RouteConfiguration {
                         .filters(f -> f.filters(tokenRelay.apply())
                                 .removeRequestHeader("Cookie")) // Prevents cookie being sent downstream
                         .uri(secureResourceUrl))
+                .route("userinfo", r -> r.path("/userinfo")
+                        .filters(f -> f.filters(tokenRelay.apply()))
+                        .uri(authServerUrl))
                 .build();
     }
 }
