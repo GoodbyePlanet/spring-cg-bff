@@ -17,6 +17,14 @@ logging:
 spring:
   thymeleaf:
     cache: false
+  data:
+    redis:
+      host: oauth2-session
+      port: 6379
+  session:
+    redis:
+      namespace: spring:session
+
 # Example of setting oauth2 client using configuration properties
 #  security:
 #    oauth2:

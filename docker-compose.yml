@@ -19,6 +19,23 @@ services:
       timeout: 5s
       retries: 3
 
+  oauth2-session:
+    image: redis:7.2
+    container_name: oauth2-session
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis_commander
+    environment:
+      - REDIS_HOSTS=local:oauth2-session:6379
+    ports:
+      - "8082:8081"
+
   auth-server:
     build:
       context: ./auth-server
@@ -63,36 +80,7 @@ services:
 
 volumes:
   mariadb_data:
+  redis_data:
 
 networks:
   default:
-
-#  postgres:
-#    image: postgres:latest
-#    container_name: postgresDB
-#    environment:
-#      POSTGRES_PASSWORD: mysecretpassword
-#    ports:
-#      - "5432:5432"
-#    volumes:
-#      - postgres_data:/var/lib/postgresql/data
-#    healthcheck:
-#      test: ["CMD-SHELL", "pg_isready -U postgres"]
-#      interval: 5s
-#      timeout: 5s
-#      retries: 5
-
-#  uaa:
-#    image: cloudfoundry/uaa
-#    container_name: uaa
-#    depends_on:
-#      postgres:
-#        condition: service_healthy
-#    ports:
-#      - "8080:8080"
-#    environment:
-#      UAA_CONFIG_URL: file:/uaa/uaa.yml
-#    volumes:
-#      - ./uaa.yml:/uaa/uaa.yml
-#    networks:
-#      - default
