@@ -20,4 +20,9 @@ public class IndexController {
         model.addAttribute("userAttributes", oauth2User.getAttributes());
         return "index";
     }
+
+    @GetMapping("/logged-out")
+    public String loggedOut() {
+        return "logged-out";
+    }
 }

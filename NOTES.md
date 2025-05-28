@@ -30,3 +30,31 @@ postgres:
     networks:
       - default
 ```
+
+### Example of setting oauth2 client using configuration properties
+```
+  security:
+    oauth2:
+      client:
+        registration:
+          gateway:
+            provider: auth-server
+            client-id: gateway
+            client-secret: secret
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid,profile,resource.read
+        provider:
+          auth-server:
+            issuer-uri: http://auth-server:9000
+  cloud:
+    gateway:
+      routes:
+        - id: resource
+          uri: http://resource:9000
+          predicates:
+            - Path=/resource
+          filters:
+            - TokenRelay=
+            - RemoveRequestHeader=Cookie
+```
