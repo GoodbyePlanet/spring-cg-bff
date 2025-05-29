@@ -3,7 +3,7 @@
 echo "-------------------------------------------"
 echo "Building all modules..."
 echo "-------------------------------------------"
-mvn clean install
+./mvnw clean install
 
 echo "-------------------------------------------"
 echo "Building and starting docker containers..."
