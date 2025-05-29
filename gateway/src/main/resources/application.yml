@@ -24,3 +24,4 @@ spring:
   session:
     redis:
       namespace: spring:session
+      repository-type: default
