@@ -30,79 +30,77 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 @EnableWebSecurity
 public class AuthorizationServerConfiguration {
 
-    private final JpaAuthorizationService authorizationService;
-    private final JpaAuthorizationConsentService authorizationConsentService;
-    private final JpaClientRepository registeredClientRepository;
-    private final String authServerUrl;
+	private final JpaAuthorizationService authorizationService;
+	private final JpaAuthorizationConsentService authorizationConsentService;
+	private final JpaClientRepository registeredClientRepository;
+	private final String authServerUrl;
 
-    public AuthorizationServerConfiguration(JpaAuthorizationService authorizationService,
-                                            JpaAuthorizationConsentService authorizationConsentService,
-                                            JpaClientRepository registeredClientRepository,
-                                            @Value("${oauth2.auth-server-url}") String authServerUrl) {
-        this.authorizationService = authorizationService;
-        this.authorizationConsentService = authorizationConsentService;
-        this.registeredClientRepository = registeredClientRepository;
-        this.authServerUrl = authServerUrl;
-    }
+	public AuthorizationServerConfiguration(JpaAuthorizationService authorizationService,
+		JpaAuthorizationConsentService authorizationConsentService,
+		JpaClientRepository registeredClientRepository,
+		@Value("${oauth2.auth-server-url}") String authServerUrl) {
+		this.authorizationService = authorizationService;
+		this.authorizationConsentService = authorizationConsentService;
+		this.registeredClientRepository = registeredClientRepository;
+		this.authServerUrl = authServerUrl;
+	}
 
-    @Bean
-    @Order(Ordered.HIGHEST_PRECEDENCE)
-    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
-            throws Exception {
-        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
-                OAuth2AuthorizationServerConfigurer.authorizationServer();
+	@Bean
+	@Order(Ordered.HIGHEST_PRECEDENCE)
+	public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
+		throws Exception {
+		OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
+			OAuth2AuthorizationServerConfigurer.authorizationServer();
 
-        http.securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
-                .with(authorizationServerConfigurer, (authorizationServer) -> {
-                    authorizationServer.authorizationService(authorizationService);
-                    authorizationServer.authorizationConsentService(authorizationConsentService);
-                    authorizationServer.registeredClientRepository(registeredClientRepository);
-                    authorizationServer.oidc(Customizer.withDefaults());
-                })
-                .authorizeHttpRequests((authorize) ->
-                        authorize.anyRequest().authenticated())
-                // Redirect to the login page when not authenticated from the
-                // authorization endpoint
-                .exceptionHandling((exceptions) -> exceptions
-                        .defaultAuthenticationEntryPointFor(
-                                new LoginUrlAuthenticationEntryPoint("/login"),
-                                new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
-                        )
-                );
+		http.securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
+			.with(authorizationServerConfigurer, (authorizationServer) -> {
+				authorizationServer.authorizationService(authorizationService);
+				authorizationServer.authorizationConsentService(authorizationConsentService);
+				authorizationServer.registeredClientRepository(registeredClientRepository);
+				authorizationServer.oidc(Customizer.withDefaults());
+			})
+			.authorizeHttpRequests((authorize) ->
+				authorize.anyRequest().authenticated())
+			// Redirect to the login page when not authenticated from the authorization endpoint
+			.exceptionHandling((exceptions) -> exceptions
+				.defaultAuthenticationEntryPointFor(
+					new LoginUrlAuthenticationEntryPoint("/login"),
+					new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
+				)
+			);
 
-        return http.build();
-    }
+		return http.build();
+	}
 
-    @Bean
-    @Order(2)
-    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
-            throws Exception {
-        http.authorizeHttpRequests((authorize) -> authorize
-                        .anyRequest().authenticated())
-                // Form login handles the redirect to the login page from the
-                // authorization server filter chain
-                .formLogin(Customizer.withDefaults());
+	@Bean
+	@Order(2)
+	public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
+		throws Exception {
+		http.authorizeHttpRequests((authorize) -> authorize
+				.anyRequest().authenticated())
+			// Form login handles the redirect to the login page from the authorization server filter chain
+			.formLogin(Customizer.withDefaults());
 
-        return http.build();
-    }
+		return http.build();
+	}
 
-    @Bean
-    public UserDetailsService userDetailsService() {
-        UserDetails userDetails = User.withUsername("user")
-                .password("{noop}pass")
-                .roles("USER")
-                .build();
+	@Bean
+	public UserDetailsService userDetailsService() {
+		UserDetails userDetails = User.withUsername("user")
+			.password("{noop}pass")
+			.roles("USER")
+			.build();
 
-        return new InMemoryUserDetailsManager(userDetails);
-    }
+		return new InMemoryUserDetailsManager(userDetails);
+	}
 
-    @Bean
-    public AuthorizationServerSettings authorizationServerSettings() {
-        return AuthorizationServerSettings.builder().issuer(authServerUrl).build();
-    }
+	@Bean
+	public AuthorizationServerSettings authorizationServerSettings() {
+		return AuthorizationServerSettings.builder().issuer(authServerUrl).build();
+	}
 
-    @Bean
-    public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
-        return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
-    }
+	@Bean
+	public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
+		return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+	}
 }

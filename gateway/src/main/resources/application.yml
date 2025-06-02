@@ -1,6 +1,9 @@
 server:
   port: 8081
 
+fe-app:
+  base-uri: http://localhost:5173
+
 oauth2:
   secure-resource-url: http://secure-resource:9100
   auth-server-url: http://auth-server:9000

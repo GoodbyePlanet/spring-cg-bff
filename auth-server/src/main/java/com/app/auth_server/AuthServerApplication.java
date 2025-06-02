@@ -15,33 +15,34 @@ import java.util.UUID;
 
 @SpringBootApplication
 public class AuthServerApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(AuthServerApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(AuthServerApplication.class, args);
+	}
 
-    @Bean
-    ApplicationRunner runner(RegisteredClientRepository registeredClientRepository) {
-        return args -> {
-            RegisteredClient existingGatewayClient = registeredClientRepository.findByClientId("gateway");
+	@Bean
+	ApplicationRunner runner(RegisteredClientRepository registeredClientRepository) {
+		return args -> {
+			RegisteredClient existingGatewayClient = registeredClientRepository.findByClientId("gateway");
 
-            if (existingGatewayClient == null) {
-                RegisteredClient confidentialClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                        .clientId("gateway")
-                        .clientSecret("{noop}secret")
-                        .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                        .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                        .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                        .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                        .redirectUri("http://localhost:8081/login/oauth2/code/gateway")
-                        .postLogoutRedirectUri("http://localhost:8081/logged-out")
-                        .scope(OidcScopes.OPENID)
-                        .scope(OidcScopes.PROFILE)
-                        .scope("resource.read")
-                        .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
-                        .build();
+			if (existingGatewayClient == null) {
+				RegisteredClient confidentialClient = RegisteredClient.withId(UUID.randomUUID().toString())
+					.clientId("gateway")
+					.clientSecret("{noop}secret")
+					.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+					.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+					.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+					.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+					.redirectUri("http://localhost:8081/login/oauth2/code/gateway")
+//					.redirectUri("http://localhost:8081/authorized")
+					.postLogoutRedirectUri("http://localhost:8081/logged-out")
+					.scope(OidcScopes.OPENID)
+					.scope(OidcScopes.PROFILE)
+					.scope("resource.read")
+					.clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
+					.build();
 
-                registeredClientRepository.save(confidentialClient);
-            }
-        };
-    }
+				registeredClientRepository.save(confidentialClient);
+			}
+		};
+	}
 }
