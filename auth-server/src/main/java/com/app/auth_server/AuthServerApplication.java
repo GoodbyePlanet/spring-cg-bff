@@ -33,7 +33,6 @@ public class AuthServerApplication {
 					.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
 					.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
 					.redirectUri("http://localhost:8081/login/oauth2/code/gateway")
-//					.redirectUri("http://localhost:8081/authorized")
 					.postLogoutRedirectUri("http://localhost:8081/logged-out")
 					.scope(OidcScopes.OPENID)
 					.scope(OidcScopes.PROFILE)

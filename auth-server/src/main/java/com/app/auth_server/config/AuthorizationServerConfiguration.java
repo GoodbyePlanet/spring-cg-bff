@@ -86,7 +86,7 @@ public class AuthorizationServerConfiguration {
 
 	@Bean
 	public UserDetailsService userDetailsService() {
-		UserDetails userDetails = User.withUsername("user")
+		UserDetails userDetails = User.withUsername("devnull")
 			.password("{noop}pass")
 			.roles("USER")
 			.build();

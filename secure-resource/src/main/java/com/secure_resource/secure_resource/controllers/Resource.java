@@ -15,7 +15,7 @@ public class Resource {
         log.info("***** JWT Headers: {}", jwt.getHeaders());
         log.info("**** JWT Claims: {}", jwt.getClaims().toString());
         log.info("***** JWT Token: {}", jwt.getTokenValue());
-        return String.format("Resource accessed by: %s (with subjectId: %s)" ,
+        return String.format("Resource successfully accessed by: %s (with subjectId: %s)" ,
                 jwt.getAudience().get(0),
                 jwt.getSubject());
     }

@@ -7,11 +7,10 @@ const axiosInstance = axios.create({
   withCredentials: true, // This ensures session cookies are included
 });
 
-// Interceptor to prepend base URL only if the request URL is relative
+// Interceptor to prepend base URL only if the request URL is relative,
+// For example, "/userinfo" → "http://localhost:8081/userinfo"
 axiosInstance.interceptors.request.use(config => {
-  console.log('HEERE>>>>', config);
   if (config.url && !config.url.startsWith('http')) {
-    console.log('base url', backendBaseUrl + config.url);
     config.url = backendBaseUrl + config.url;
   }
   return config;

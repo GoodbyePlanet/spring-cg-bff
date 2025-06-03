@@ -20,14 +20,14 @@ public class Oauth2ClientConfiguration {
 
 	@Bean
 	public ReactiveClientRegistrationRepository clientRegistrationRepository() {
+		final String GATEWAY = "gateway";
 		ClientRegistration gateway = ClientRegistrations.fromIssuerLocation(authServerUrl)
-			.clientId("gateway")
-			.clientName("gateway")
-			.registrationId("gateway")
+			.clientId(GATEWAY)
+			.clientName(GATEWAY)
+			.registrationId(GATEWAY)
 			.clientSecret("secret")
 			.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
 			.redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
-//			.redirectUri("{baseUrl}/authorized")
 			.scope("openid", "profile", "resource.read")
 			.build();
 

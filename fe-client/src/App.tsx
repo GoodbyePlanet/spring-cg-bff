@@ -6,18 +6,17 @@ const backendBaseUrl = import.meta.env.VITE_AUTH_BFF;
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
-  const [messages, setMessages] = useState<string[]>([]);
+  const [resource, setResource] = useState<string>('');
 
   useEffect(() => {
     getUserInfo();
-    // getMessages();
   }, []);
 
   const login = () => {
     window.location.href = backendBaseUrl;
   };
 
-  const getUserInfo = async () => {
+  const getUserInfo = async (): Promise<void> => {
     try {
       const response = await axiosInstance.get('/userinfo');
       if (response.data) {
@@ -29,16 +28,24 @@ const App: React.FC = () => {
     }
   };
 
-  const getMessages = () => {
-    window.location.href = backendBaseUrl + '/resource';
+  const getSecureResource = async (): Promise<void> => {
+    try {
+      const response = await axiosInstance.get('/resource');
+      if (response.data) {
+        console.log('RESOURCE', response.data);
+        setResource(response.data);
+      }
+    } catch (error) {
+      console.error('Error getting resource data', error);
+    }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     try {
       await axiosInstance.post('/logout');
       setIsAuthenticated(false);
       setUserName('');
-      setMessages([]);
+      setResource('');
     } catch (error) {
       console.error(error);
     }
@@ -46,7 +53,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      <div className="relative min-h-screen w-screen bg-white flex items-center justify-center">
+      <div className="relative min-h-screen w-screen bg-white flex flex-col items-center justify-center">
         {isAuthenticated ? (
           <>
             <button
@@ -57,12 +64,14 @@ const App: React.FC = () => {
             </button>
             <div className="flex flex-col items-center space-y-4">
               <span className="text-sm text-gray-800">{userName}</span>
-              <button
-                onClick={getMessages}
-                className="bg-black text-white px-6 py-3 rounded hover:bg-gray-800 transition"
-              >
-                Get Messages
-              </button>
+              {!resource && (
+                <button
+                  onClick={getSecureResource}
+                  className="bg-black text-white px-6 py-3 rounded hover:bg-gray-800 transition"
+                >
+                  Get Secure Resource
+                </button>
+              )}
             </div>
           </>
         ) : (
@@ -70,30 +79,9 @@ const App: React.FC = () => {
             Login
           </button>
         )}
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {messages.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm text-left text-gray-700 border border-gray-200">
-              <caption className="text-lg font-semibold mb-2">Messages</caption>
-              <thead className="bg-gray-200">
-                <tr>
-                  <th className="px-4 py-2 border-b">#</th>
-                  <th className="px-4 py-2 border-b">Message</th>
-                </tr>
-              </thead>
-              <tbody>
-                {messages.map((message, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 border-b">{index + 1}</td>
-                    <td className="px-4 py-2 border-b">{message}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <div className="mt-3 font-bold text-black bg-white flex items-center justify-center">
+          {resource && <p>{resource}</p>}
+        </div>
       </div>
     </>
   );
