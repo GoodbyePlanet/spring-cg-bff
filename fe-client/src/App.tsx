@@ -6,7 +6,8 @@ const backendBaseUrl = import.meta.env.VITE_AUTH_BFF;
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
-  const [resource, setResource] = useState<string>('');
+  const [secureResource, setSecureResource] = useState<string>('');
+  const [hasNoPermissionForResource, setHasNoPermissionForResource] = useState<boolean>(false);
 
   useEffect(() => {
     getUserInfo();
@@ -33,11 +34,19 @@ const App: React.FC = () => {
       const response = await axiosInstance.get('/resource');
       if (response.data) {
         console.log('RESOURCE', response.data);
-        setResource(response.data);
+        setSecureResource(response.data);
+        setHasNoPermissionForResource(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting resource data', error);
+      if (error?.status === 403) {
+        setHasNoPermissionForResource(true);
+      }
     }
+  };
+
+  const authorizeSecureResource = async (): Promise<void> => {
+    window.location.href = backendBaseUrl + '/oauth2/authorization/gateway';
   };
 
   const logout = async (): Promise<void> => {
@@ -45,7 +54,7 @@ const App: React.FC = () => {
       await axiosInstance.post('/logout');
       setIsAuthenticated(false);
       setUserName('');
-      setResource('');
+      setSecureResource('');
     } catch (error) {
       console.error(error);
     }
@@ -63,8 +72,8 @@ const App: React.FC = () => {
               Logout
             </button>
             <div className="flex flex-col items-center space-y-4">
-              <span className="text-sm text-gray-800">{userName}</span>
-              {!resource && (
+              <span className="text-lg font-bold text-gray-800">Username: {userName.toUpperCase()}</span>
+              {!secureResource && (
                 <button
                   onClick={getSecureResource}
                   className="bg-black text-white px-6 py-3 rounded hover:bg-gray-800 transition"
@@ -79,8 +88,19 @@ const App: React.FC = () => {
             Login
           </button>
         )}
-        <div className="mt-3 font-bold text-black bg-white flex items-center justify-center">
-          {resource && <p>{resource}</p>}
+        <div className="mt-3 font-bold text-black bg-white flex flex-col items-center justify-center">
+          {secureResource && <p>{secureResource}</p>}
+          {hasNoPermissionForResource && (
+            <>
+              <p>You don't have enough permissions to access secure resource!</p>
+              <button
+                onClick={authorizeSecureResource}
+                className="mt-3 px-4 py-1 border border-gray-800 text-white rounded hover:bg-gray-200 text-sm"
+              >
+                Authorize Secure Resource
+              </button>
+            </>
+          )}
         </div>
       </div>
     </>
