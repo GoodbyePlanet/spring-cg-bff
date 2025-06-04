@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axiosInstance from './axios/axiosInstance';
+import axiosInstance, { getCookie } from './axios/axiosInstance';
 
 const backendBaseUrl = import.meta.env.VITE_AUTH_BFF;
 
@@ -50,8 +50,9 @@ const App: React.FC = () => {
   };
 
   const logout = async (): Promise<void> => {
+    const csrfCookie = getCookie('XSRF-TOKEN');
     try {
-      await axiosInstance.post('/logout');
+      await axiosInstance.post('/logout', {}, { headers: { 'X-XSRF-TOKEN': csrfCookie } });
       setIsAuthenticated(false);
       setUserName('');
       setSecureResource('');

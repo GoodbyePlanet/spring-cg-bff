@@ -1,5 +1,6 @@
 package com.gatewaykeeper.gateway.configuration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,28 +9,22 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
-import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.server.DelegatingServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
-import org.springframework.security.web.server.authentication.logout.DelegatingServerLogoutHandler;
-import org.springframework.security.web.server.authentication.logout.HttpStatusReturningServerLogoutSuccessHandler;
-import org.springframework.security.web.server.authentication.logout.SecurityContextServerLogoutHandler;
-import org.springframework.security.web.server.authentication.logout.ServerLogoutHandler;
 import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository;
-import org.springframework.security.web.server.csrf.CsrfServerLogoutHandler;
 import org.springframework.security.web.server.csrf.CsrfToken;
-import org.springframework.security.web.server.csrf.ServerCsrfTokenRepository;
+import org.springframework.security.web.server.csrf.ServerCsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.server.util.matcher.MediaTypeServerWebExchangeMatcher;
 import org.springframework.web.server.WebFilter;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+@Slf4j
 @Configuration(proxyBeanMethods = false)
 @EnableWebFluxSecurity
 public class SecurityConfiguration {
@@ -38,39 +33,42 @@ public class SecurityConfiguration {
 	private String feAppBaseUrl;
 
 	@Bean
-	public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http,
-		ReactiveClientRegistrationRepository registry) {
+	public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
 		CookieServerCsrfTokenRepository cookieCsrfTokenRepository = CookieServerCsrfTokenRepository.withHttpOnlyFalse();
-
-//		ServerCsrfTokenRequestHandler csrfHandler = new ServerCsrfTokenRequestHandler();
-		// Opt-out of deferred CSRF token loading
+		ServerCsrfTokenRequestAttributeHandler csrfTokenRequestHandler = new ServerCsrfTokenRequestAttributeHandler();
+		RedirectServerAuthenticationSuccessHandler redirectSuccessHandler =
+			new RedirectServerAuthenticationSuccessHandler(this.feAppBaseUrl);
 
 		http.authorizeExchange(auth -> auth
 				.pathMatchers("/logged-out").permitAll()
 				.anyExchange().authenticated())
 			.cors(Customizer.withDefaults())
-			.csrf(csrf -> csrf.csrfTokenRepository(cookieCsrfTokenRepository))
+			.csrf(csrf -> csrf
+				.csrfTokenRepository(cookieCsrfTokenRepository)
+				.csrfTokenRequestHandler(csrfTokenRequestHandler))
 			.exceptionHandling(exceptionHandling ->
 				exceptionHandling.authenticationEntryPoint(authenticationEntryPoint()))
 			.oauth2Login(oauth2Login ->
-				oauth2Login.authenticationSuccessHandler(new RedirectServerAuthenticationSuccessHandler(this.feAppBaseUrl)))
+				oauth2Login.authenticationSuccessHandler(redirectSuccessHandler))
 			.oauth2Client(Customizer.withDefaults())
 			.logout(logout ->
 				logout
-					.logoutHandler(logoutHandler(cookieCsrfTokenRepository))
-					.logoutSuccessHandler(new HttpStatusReturningServerLogoutSuccessHandler())
+					.logoutSuccessHandler((exchange, authentication) -> {
+						exchange.getExchange().getResponse().setStatusCode(HttpStatus.OK);
+						return exchange.getExchange().getResponse().setComplete();
+					})
 			);
-//			.logout(logout -> logout.logoutSuccessHandler(oidcLogoutSuccessHandler(registry)));
 
 		return http.build();
 	}
 
 	@Bean
-	public WebFilter csrfTokenWebFilter() {
+	WebFilter csrfCookieWebFilter() {
 		return (exchange, chain) -> {
-			// Forces resolution of CSRF token, so it will be sent back (e.g., in cookie)
-			return exchange.getAttributeOrDefault(CsrfToken.class.getName(), Mono.empty())
-				.then(chain.filter(exchange));
+			Mono<CsrfToken> csrfToken = exchange.getAttributeOrDefault(CsrfToken.class.getName(), Mono.empty());
+			return csrfToken.doOnSuccess(token -> {
+				/* Ensures the token is subscribed to. */
+			}).then(chain.filter(exchange));
 		};
 	}
 
@@ -92,23 +90,4 @@ public class SecurityConfiguration {
 
 		return delegatingEntryPoint;
 	}
-
-
-	private ServerLogoutHandler logoutHandler(ServerCsrfTokenRepository csrfTokenRepository) {
-		return new DelegatingServerLogoutHandler(
-			new SecurityContextServerLogoutHandler(),
-			new CsrfServerLogoutHandler(csrfTokenRepository)
-		);
-	}
-
-	/*private ServerLogoutSuccessHandler oidcLogoutSuccessHandler(
-		ReactiveClientRegistrationRepository registrationRepository) {
-		OidcClientInitiatedServerLogoutSuccessHandler oidcLogoutSuccessHandler =
-			new OidcClientInitiatedServerLogoutSuccessHandler(registrationRepository);
-
-		// Set the location that the End-User's User Agent will be redirected to
-		oidcLogoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}/logged-out");
-
-		return oidcLogoutSuccessHandler;
-	}*/
 }
