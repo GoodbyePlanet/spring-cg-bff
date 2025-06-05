@@ -14,14 +14,4 @@ public class IndexController {
 	public String root() {
 		return "redirect:" + this.feAppBaseUrl;
 	}
-
-	@GetMapping("/authorized")
-	public String authorized() {
-		return "redirect:" + this.feAppBaseUrl;
-	}
-
-	@GetMapping("/logged-out")
-	public String loggedOut() {
-		return "logged-out";
-	}
 }

@@ -40,8 +40,8 @@ public class SecurityConfiguration {
 			new RedirectServerAuthenticationSuccessHandler(this.feAppBaseUrl);
 
 		http.authorizeExchange(auth -> auth
-				.pathMatchers("/logged-out").permitAll()
-				.anyExchange().authenticated())
+				.anyExchange()
+				.authenticated())
 			.cors(Customizer.withDefaults())
 			.csrf(csrf -> csrf
 				.csrfTokenRepository(cookieCsrfTokenRepository)
