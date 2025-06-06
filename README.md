@@ -6,17 +6,35 @@
 
  - java 21 installed
 
+Update **/etc/hosts**
+```
+127.0.0.1 auth-server
+127.0.0.1 secure-resource
+```
+This is required when running services via docker containers, and until I figure out how to make it running
+without changing **hosts** file
+
 #### To start all service
 ```
 ./build-and-run.sh
 ```
 This will build all backend modules, create and run docker containers
 
+Build and run **fe-client**
+```
+cd fe-client
+cp .env.example .env.development
+nvm use
+yarn
+yarn dev
+```
+
 #### Services
 
-- auth-server --- Spring Authorization Server
-- gateway --- Spring Cloud Gateway service acting as a BFF
-- secure-resource --- Spring Resource Server
+- **auth-server** --- Spring Authorization Server
+- **gateway** --- Spring Cloud Gateway service acting as a BFF (Backend for Frontend)
+- **secure-resource** --- Spring Resource Server
+- **fe-client** --- React frontend application
 
 #### Databases
 

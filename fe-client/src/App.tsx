@@ -4,8 +4,8 @@ import axiosInstance, { getCookie } from './axios/axiosInstance';
 const backendBaseUrl = import.meta.env.VITE_AUTH_BFF;
 
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userName, setUserName] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [userName, setUserName] = useState<string>('');
   const [secureResource, setSecureResource] = useState<string>('');
   const [hasNoPermissionForResource, setHasNoPermissionForResource] = useState<boolean>(false);
 
@@ -22,7 +22,7 @@ const App: React.FC = () => {
       const response = await axiosInstance.get('/userinfo');
       if (response.data) {
         setIsAuthenticated(true);
-        setUserName(response.data.sub);
+        setUserName(response?.data?.sub);
       }
     } catch (error) {
       console.error('Error getting user info', error);
@@ -33,7 +33,6 @@ const App: React.FC = () => {
     try {
       const response = await axiosInstance.get('/resource');
       if (response.data) {
-        console.log('RESOURCE', response.data);
         setSecureResource(response.data);
         setHasNoPermissionForResource(false);
       }
@@ -73,7 +72,7 @@ const App: React.FC = () => {
               Logout
             </button>
             <div className="flex flex-col items-center space-y-4">
-              <span className="text-lg font-bold text-gray-800">Username: {userName.toUpperCase()}</span>
+              <span className="text-lg font-bold text-gray-800">Username: {userName?.toUpperCase()}</span>
               {!secureResource && (
                 <button
                   onClick={getSecureResource}
