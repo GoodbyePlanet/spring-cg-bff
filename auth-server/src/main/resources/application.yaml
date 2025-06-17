@@ -22,33 +22,3 @@ spring:
     hibernate:
       ddl-auto: create
 
-#  sql:
-#    init:
-#      mode: always
-#      schema-locations:
-#        - classpath:org/springframework/security/oauth2/server/authorization/oauth2-authorization-schema.sql
-#        - classpath:org/springframework/security/oauth2/server/authorization/oauth2-authorization-consent-schema.sql
-#        - classpath:org/springframework/security/oauth2/server/authorization/client/oauth2-registered-client-schema.sql
-#spring:
-#  security:
-#    user:
-#      name: user
-#      password: password
-#    oauth2:
-#      authorizationserver:
-#        client:
-#          confidential-client-auth-code:
-#            registration:
-#              client-id: "confidential-client"
-#              client-secret: "{noop}secret"
-#              client-authentication-methods:
-#                - "client_secret_basic"
-#              authorization-grant-types:
-#                - "authorization_code"
-#                - "refresh_token"
-#              redirect-uris:
-##                - "http://localhost:8080/login/oauth2/code/confidential-client"
-#                - "http://localhost:8082"
-#              scopes:
-#                - "messages.read"
-#            require-authorization-consent: true
