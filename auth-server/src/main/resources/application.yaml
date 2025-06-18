@@ -1,8 +1,12 @@
 server:
   port: 9000
 
+fe-app:
+  base-uri: http://localhost:5173
+
 oauth2:
   auth-server-url: http://auth-server:9000
+  gateway-client-url: http://localhost:8081
 
 logging:
   level:

@@ -9,12 +9,15 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.oauth2.client.oidc.web.server.logout.OidcClientInitiatedServerLogoutSuccessHandler;
+import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
 import org.springframework.security.web.server.DelegatingServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
+import org.springframework.security.web.server.authentication.logout.ServerLogoutSuccessHandler;
 import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository;
 import org.springframework.security.web.server.csrf.CsrfToken;
 import org.springframework.security.web.server.csrf.ServerCsrfTokenRequestAttributeHandler;
@@ -25,7 +28,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 @Slf4j
-@Configuration(proxyBeanMethods = false)
+@Configuration(proxyBeanMethods = true)
 @EnableWebFluxSecurity
 public class SecurityConfiguration {
 
@@ -33,11 +36,13 @@ public class SecurityConfiguration {
 	private String feAppBaseUrl;
 
 	@Bean
-	public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
+	public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http,
+		ReactiveClientRegistrationRepository clientRegistrationRepository) {
+
 		CookieServerCsrfTokenRepository cookieCsrfTokenRepository = CookieServerCsrfTokenRepository.withHttpOnlyFalse();
 		ServerCsrfTokenRequestAttributeHandler csrfTokenRequestHandler = new ServerCsrfTokenRequestAttributeHandler();
 		RedirectServerAuthenticationSuccessHandler redirectSuccessHandler =
-			new RedirectServerAuthenticationSuccessHandler(this.feAppBaseUrl);
+			new RedirectServerAuthenticationSuccessHandler(feAppBaseUrl);
 
 		http.authorizeExchange(auth -> auth
 				.anyExchange()
@@ -51,15 +56,16 @@ public class SecurityConfiguration {
 			.oauth2Login(oauth2Login ->
 				oauth2Login.authenticationSuccessHandler(redirectSuccessHandler))
 			.oauth2Client(Customizer.withDefaults())
-			.logout(logout ->
-				logout
-					.logoutSuccessHandler((exchange, authentication) -> {
-						exchange.getExchange().getResponse().setStatusCode(HttpStatus.OK);
-						return exchange.getExchange().getResponse().setComplete();
-					})
-			);
+			.logout(logout -> logout.logoutSuccessHandler(logoutSuccessHandler(clientRegistrationRepository)));
 
 		return http.build();
+	}
+
+	@Bean
+	public ServerLogoutSuccessHandler logoutSuccessHandler(ReactiveClientRegistrationRepository repo) {
+		OidcClientInitiatedServerLogoutSuccessHandler handler = new OidcClientInitiatedServerLogoutSuccessHandler(repo);
+		handler.setPostLogoutRedirectUri(feAppBaseUrl);
+		return handler;
 	}
 
 	@Bean

@@ -1,6 +1,7 @@
 package com.app.auth_server.initializers;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -19,10 +20,17 @@ public class RegisteredClientInitializer implements CommandLineRunner {
 
 	private final RegisteredClientRepository registeredClientRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final String gatewayUrl;
+	private final String feClientUrl;
 
-	public RegisteredClientInitializer(RegisteredClientRepository registeredClientRepository, PasswordEncoder passwordEncoder) {
+	public RegisteredClientInitializer(RegisteredClientRepository registeredClientRepository,
+		PasswordEncoder passwordEncoder,
+		@Value("${oauth2.gateway-client-url}") String gatewayUrl,
+		@Value("${fe-app.base-uri}") String feClientUrl) {
 		this.registeredClientRepository = registeredClientRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.gatewayUrl = gatewayUrl;
+		this.feClientUrl = feClientUrl;
 	}
 
 	@Override
@@ -37,7 +45,8 @@ public class RegisteredClientInitializer implements CommandLineRunner {
 				.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
 				.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
 				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-				.redirectUri("http://localhost:8081/login/oauth2/code/gateway")
+				.redirectUri(gatewayUrl + "/login/oauth2/code/gateway")
+				.postLogoutRedirectUri(feClientUrl)
 				.scope(OidcScopes.OPENID)
 				.scope(OidcScopes.PROFILE)
 				.scope("resource.read")
