@@ -39,4 +39,6 @@ yarn dev
 #### Databases
 
 - oauth2-db --- MariaDB for storing Spring Authorization Server (registered clients, authorizations, consent screen)
-- oauth2-session --- Redis DB for storing Spring Security Sessions --- UI available on http://localhost:8082
+  - UI available on http://localhost:8080/?server=oauth_db&username=oauth&db=oauth_db
+- oauth2-session --- Redis DB for storing Spring Security Sessions
+  - UI available on http://localhost:8082

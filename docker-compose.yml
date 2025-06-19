@@ -19,6 +19,14 @@ services:
       timeout: 5s
       retries: 3
 
+  # UI for MariaDB
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+
   oauth2-session:
     image: redis:7.2
     container_name: oauth2-session
