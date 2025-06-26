@@ -42,3 +42,14 @@ yarn dev
   - UI available on http://localhost:8080/?server=oauth_db&username=oauth&db=oauth_db
 - oauth2-session --- Redis DB for storing Spring Security Sessions
   - UI available on http://localhost:8082
+
+#### Observability
+
+- To start docker containers related to observability
+```
+cd observability
+docker-compose up
+```
+
+Grafana UI is present on http://localhost:3000/
+Loki is at http://loki:3100
