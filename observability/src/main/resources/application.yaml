@@ -1,0 +1,14 @@
+spring:
+  application.name: observability
+
+management:
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0 # capture all requests for dev
+  otlp:
+    metrics:
+      export:
+        enabled: true
+    tracing:
+      endpoint: http://otel-collector:4317 # OpenTelemetry Collector endpoint

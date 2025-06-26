@@ -1,0 +1,35 @@
+<configuration>
+	<appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+		<http>
+			<url>http://loki:3100/loki/api/v1/push</url>
+		</http>
+		<format>
+			<label>
+				<pattern>app=${SPRING_APPLICATION_NAME:-unknown},env=${APP_ENV:-local},host=${HOSTNAME},traceId=%X{traceId:-unknown},level=%level</pattern>
+				<readMarkers>true</readMarkers>
+			</label>
+			<message>
+				<pattern>
+					{
+					"app":"${SPRING_APPLICATION_NAME:-unknown}",
+					"level":"%level",
+					"class":"%logger{36}",
+					"thread":"%thread",
+					"message": "%message",
+					"traceId": "%X{traceId}"
+					}
+				</pattern>
+			</message>
+		</format>
+	</appender>
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<root level="INFO">
+		<appender-ref ref="LOKI" />
+		<appender-ref ref="STDOUT" />
+	</root>
+</configuration>

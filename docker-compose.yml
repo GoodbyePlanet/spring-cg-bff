@@ -57,8 +57,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mariadb://oauth_db:3306/oauth_db
       SPRING_DATASOURCE_USERNAME: oauth
       SPRING_DATASOURCE_PASSWORD: oauth
+      SPRING_APPLICATION_NAME: auth-server
     networks:
       - default
+      - observability
 
   gateway:
     build:
@@ -70,8 +72,11 @@ services:
       - "8081"
     depends_on:
       - auth-server
+    environment:
+      SPRING_APPLICATION_NAME: gateway
     networks:
       - default
+      - observability
 
   secure-resource:
     build:
@@ -83,8 +88,11 @@ services:
       - "9100"
     depends_on:
       - auth-server
+    environment:
+      SPRING_APPLICATION_NAME: secure-resource
     networks:
       - default
+      - observability
 
 volumes:
   mariadb_data:
@@ -92,3 +100,5 @@ volumes:
 
 networks:
   default:
+  observability:
+    external: true
