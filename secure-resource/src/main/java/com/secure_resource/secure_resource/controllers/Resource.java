@@ -12,9 +12,9 @@ public class Resource {
 
     @GetMapping("/resource")
     public String resource(@AuthenticationPrincipal Jwt jwt) {
-        log.info("***** JWT Headers: {}", jwt.getHeaders());
-        log.info("**** JWT Claims: {}", jwt.getClaims().toString());
-        log.info("***** JWT Token: {}", jwt.getTokenValue());
+        log.debug("***** JWT Headers: {}", jwt.getHeaders());
+        log.debug("**** JWT Claims: {}", jwt.getClaims().toString());
+        log.debug("***** JWT Token: {}", jwt.getTokenValue());
         return String.format("Resource successfully accessed by: %s (with subjectId: %s)" ,
                 jwt.getAudience().get(0),
                 jwt.getSubject());

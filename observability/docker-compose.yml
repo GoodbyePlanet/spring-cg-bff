@@ -3,7 +3,6 @@ version: "3.8"
 name: observability-stack
 
 services:
-  # 📡 OpenTelemetry Collector
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
     container_name: otel-collector
@@ -17,7 +16,6 @@ services:
     networks:
       - observability
 
-  # 📊 Prometheus
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -28,7 +26,6 @@ services:
     networks:
       - observability
 
-  # 📈 Grafana
   grafana:
     image: grafana/grafana:latest
     container_name: grafana

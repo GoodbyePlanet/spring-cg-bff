@@ -9,7 +9,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @EnableWebSecurity
-@Configuration(proxyBeanMethods = false)
+@Configuration
 public class SecurityConfiguration {
 
     @Bean

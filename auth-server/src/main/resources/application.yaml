@@ -11,9 +11,9 @@ oauth2:
 logging:
   level:
     root: INFO
-    org.springframework.web: TRACE
-    org.springframework.security: TRACE
-    org.springframework.security.oauth2: TRACE
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.springframework.security.oauth2: INFO
 
 spring:
   datasource:
