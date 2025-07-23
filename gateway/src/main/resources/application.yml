@@ -2,11 +2,11 @@ server:
   port: 8081
 
 fe-app:
-  base-uri: http://localhost:5173
+  base-uri: ${FE_APP_BASE_URL:http://localhost:5173}
 
 oauth2:
-  secure-resource-url: http://secure-resource:9100
-  auth-server-url: http://auth-server:9000
+  secure-resource-url: ${SECURE_RESOURCE_URL:http://secure-resource:9100}
+  auth-server-url: ${AUTH_SERVER_URL:http://auth-server:9000}
 
 logging:
   level:

@@ -54,10 +54,13 @@ services:
       oauth_db:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mariadb://oauth_db:3306/oauth_db
-      SPRING_DATASOURCE_USERNAME: oauth
-      SPRING_DATASOURCE_PASSWORD: oauth
+      MARIADB_URL: jdbc:mariadb://oauth_db:3306/oauth_db
+      MARIADB_USER_NAME: oauth
+      MARIADB_PASSWORD: oauth
       SPRING_APPLICATION_NAME: auth-server
+      FE_APP_BASE_URL: http://localhost:5173
+      AUTH_SERVER_URL: http://auth-server:9000
+      GATEWAY_CLIENT_URL: http://localhost:8081
     networks:
       - default
       - observability
@@ -74,6 +77,9 @@ services:
       - auth-server
     environment:
       SPRING_APPLICATION_NAME: gateway
+      FE_APP_BASE_URL: http://localhost:5173
+      AUTH_SERVER_URL: http://auth-server:9000
+      SECURE_RESOURCE_URL: http://secure-resource:9100
     networks:
       - default
       - observability
@@ -90,6 +96,7 @@ services:
       - auth-server
     environment:
       SPRING_APPLICATION_NAME: secure-resource
+      JWT_SET_URI: http://auth-server:9000/oauth2/jwks
     networks:
       - default
       - observability
