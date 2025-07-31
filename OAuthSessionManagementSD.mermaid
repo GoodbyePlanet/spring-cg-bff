@@ -1,0 +1,34 @@
+sequenceDiagram
+    participant User
+    participant FE as fe-client (React)
+    participant GW as gateway (BFF)
+    participant Redis as Redis Session Store
+    participant Auth as Authorization Server
+    participant RS as Resource Server
+
+    FE->>GW: Initial Request with Cookie
+    GW->>Redis: Check Session
+
+    alt No Valid Session
+        GW-->>FE: Redirect User to Login Page
+        FE->>Auth: Access Login Page
+        Auth-->>User: Display Login Screen
+        User->>Auth: Enter Credentials
+
+        alt First Time/Selecting New Scope
+            Auth-->>User: Display Consent Screen
+            User->>Auth: Grant Permissions
+        end
+
+        Auth-->>GW: Response with Authorization Code
+        GW->>Auth: Request to exchange authorization code for tokens
+        Auth-->>GW: Return OAuth 2.0 Tokens
+        GW->>Redis: Store Tokens in Session
+        GW-->>FE: Response with Set HTTP-only Session Cookie
+    end
+
+    FE->>GW: Request with Valid Cookie
+    GW->>Redis: Get access token from Session
+    GW->>RS: Forward Request with access token
+    RS-->>GW: Return Resource Data
+    GW-->>FE: Return Response Data
