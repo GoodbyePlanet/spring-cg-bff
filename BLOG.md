@@ -32,7 +32,7 @@ Architecture of the application consists of the following components:
 
 ##### auth-server
 
-The `auth-server` component server as An Authorization Server implemented with Spring Boot and the OAuth 2.0 authorization server library.
+The `auth-server` component serves as An Authorization Server implemented with Spring Boot and the OAuth 2.0 authorization server library.
 It connects to MariaDB for storing OAuth 2.0 objects, including registered clients, consents, and authorizations.
 If you run the app you can access MariaDB on http://localhost:8080/?server=oauth_db&username=oauth&db=oauth_db.
 All configurations are implemented via Spring DSL (Domain-Specific Language) in Java.
@@ -111,3 +111,46 @@ sequenceDiagram
     - Gateway retrieves tokens from Redis
     - Authenticated requests including access token are made to resource server
     - Responses are returned to the frontend
+
+##### Implementation parts
+
+Let's now go through important parts of the code that is executed and which reflects
+flow on the above sequence diagram.
+
+Starting from `fe-client` (React) code.
+```js
+const axiosInstance = axios.create({
+  baseURL: backendBaseUrl,
+  withCredentials: true,
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
+});
+```
+Here we have a configuration for Axios, `baseUrl` sets a BFF backend URL.
+`withCredentials: true` is important because it ensures that session cookies are sent with
+each request to the backend. `xsrfCookieName: 'XSRF-TOKEN'` and `xsrfHeaderName: 'X-XSRF-TOKEN'`
+are the settings that are telling Axios to look for the CSRF token in the cookie named
+`XSRF-TOKEN` and to include that token in the HTTP header named `X-XSRF-TOKEN`, this ensures
+that requests are coming from the legitimate frontend.
+
+Next, when a client code executes in the user browser, [getUserInfo](https://github.com/GoodbyePlanet/spring-cg-bff/blob/45268092c70f4f92c30849403c7beb5b7808710d/fe-client/src/App.tsx#L20)
+is called, this will either return 401 Unauthorized if the user doesn't have a active session, or
+it will return a response with the user data. If there is no active session for the user `Login` button will
+be present on the UI. When clicking on the `Login` button [login](https://github.com/GoodbyePlanet/spring-cg-bff/blob/45268092c70f4f92c30849403c7beb5b7808710d/fe-client/src/App.tsx#L16)
+function is called. It sets location in the browser URL to the url of the BFF backend. This will redirect browser to the
+BFF gateway. Why is this important and why not using XHR request to call BFF backend.
+OAuth 2.0 Authorization Code flow, which will be initiated when BFF base URL is called inherently relies on browser redirects
+to securely initiate and complete the authentication process. Redirects allow the browser to handle cross-origin navigation,
+display the identity provider’s login UI (in this case login hosted by `auth-server`), and properly manage secure, HttpOnly cookies.
+In contrast, XHR requests can’t follow redirects to external login pages, often run into CORS issues, and aren’t suitable for
+handling interactive authentication flows.
+
+
+
+
+
+
+
+
+
+
