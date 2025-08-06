@@ -47,8 +47,8 @@ For the demo purpose it has one controller for getting `/resource` that just ret
 ##### gateway
 
 The `gateway` component serves as the Backend for Frontend (BFF) layer implemented using Spring Boot and Spring Cloud Gateway library.
-It acts as a secure gateway between the frontend client and backend services,
-handling token management and authentication while providing a secure session-based communication channel through HTTP-only cookies.
+It acts as a secure gateway between the frontend client and backend services, also it acts as a confidential client on Authorization Server (`auth-server`)
+It handles token management and authentication while providing a secure session-based communication channel through HTTP-only cookies.
 This component is crucial for enhancing security by keeping sensitive OAuth tokens server-side instead of exposing them to the browser,
 with session data persisted in Redis DB for reliable state management.
 If you run the app you can access Redis UI on http://localhost:8082.
@@ -134,7 +134,7 @@ are the settings that are telling Axios to look for the CSRF token in the cookie
 that requests are coming from the legitimate frontend.
 
 Next, when a client code executes in the user browser, [getUserInfo](https://github.com/GoodbyePlanet/spring-cg-bff/blob/45268092c70f4f92c30849403c7beb5b7808710d/fe-client/src/App.tsx#L20)
-is called, this will either return 401 Unauthorized if the user doesn't have a active session, or
+is called, this will either return 401 Unauthorized if the user doesn't have active session, or
 it will return a response with the user data. If there is no active session for the user `Login` button will
 be present on the UI. When clicking on the `Login` button [login](https://github.com/GoodbyePlanet/spring-cg-bff/blob/45268092c70f4f92c30849403c7beb5b7808710d/fe-client/src/App.tsx#L16)
 function is called. It sets location in the browser URL to the url of the BFF backend. This will redirect browser to the
@@ -145,7 +145,29 @@ display the identity provider’s login UI (in this case login hosted by `auth-s
 In contrast, XHR requests can’t follow redirects to external login pages, often run into CORS issues, and aren’t suitable for
 handling interactive authentication flows.
 
+Let's now go to the `gateway`. This service is implemented with a reactive non-blocking approach using [Web Flux](https://docs.spring.io/spring-framework/reference/web/webflux.html).
+We have [Route Configuration](https://github.com/GoodbyePlanet/spring-cg-bff/blob/main/gateway/src/main/java/com/gatewaykeeper/gateway/configuration/RouteConfiguration.java)
+This configuration class has `customRouteLocator` method where routes are defined. This method uses `TokenRelayGatewayFilterFactory` instance
+to configure filter for defined routes, `tokenRelay` is responsible for taking cookie from the client request and matching it with the session,
+then it will take an access_token from the session and add it as a Bearer token in request to downstream services.
+Next important part is `.removeRequestHeader("Cookie")` which will prevent session coolies for being forwarded to the
+downstream services, this ensures that BFF session cookies stay within the gateway.
 
+In the [Security Configuration](https://github.com/GoodbyePlanet/spring-cg-bff/blob/main/gateway/src/main/java/com/gatewaykeeper/gateway/configuration/SecurityConfiguration.java)
+main security rules are configured using a reactive approach, difference from the standard blocking approach in Spring Security here
+is use of `ServerHttpSecurity` instead of `HttpSecurity`.
+`securityFilterChain` defines following:
+CSRF Protection Setup which uses cookies for handling CSRF tokens, important part here is setting `withHttpOnlyFalse()` for CSRF Token Repository,
+in order to make CSRF token readable by JavaScript. This will allow React client application to read the token and include it in the
+requests to the backend.
+
+Authentication and Authorization setup which requires all requests to be authenticated, configures OAuth 2.0 login to be able to handle
+Authorization Code Flow with `auth-server`. Configuring OAuth 2.0 client to be able to handle client credentials and token management.
+
+CSRF Cookie Web Filter which ensures CSRF token is included in response.
+
+Logout Handler which handles OIDC logout flow, this integrates with `auth-server` logout flow which making sure that on logout request
+user session is removed also on `auth-server` side. It also sets post logout redirect URL which is URL of `fe-client` React application.
 
 
 
