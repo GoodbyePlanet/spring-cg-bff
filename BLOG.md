@@ -157,18 +157,53 @@ In the [Security Configuration](https://github.com/GoodbyePlanet/spring-cg-bff/b
 main security rules are configured using a reactive approach, difference from the standard blocking approach in Spring Security here
 is use of `ServerHttpSecurity` instead of `HttpSecurity`.
 `securityFilterChain` defines following:
-CSRF Protection Setup which uses cookies for handling CSRF tokens, important part here is setting `withHttpOnlyFalse()` for CSRF Token Repository,
+CSRF Protection setup: which uses cookies for handling CSRF tokens, important part here is setting `withHttpOnlyFalse()` for CSRF Token Repository,
 in order to make CSRF token readable by JavaScript. This will allow React client application to read the token and include it in the
 requests to the backend.
 
-Authentication and Authorization setup which requires all requests to be authenticated, configures OAuth 2.0 login to be able to handle
-Authorization Code Flow with `auth-server`. Configuring OAuth 2.0 client to be able to handle client credentials and token management.
-
 CSRF Cookie Web Filter which ensures CSRF token is included in response.
 
-Logout Handler which handles OIDC logout flow, this integrates with `auth-server` logout flow which making sure that on logout request
+Authentication and Authorization setup: requires all requests to be authenticated, configures OAuth 2.0 login to be able to handle
+Authorization Code Flow with `auth-server`. Configures OAuth 2.0 client to be able to handle client credentials and token management.
+
+Logout Handler which handles OIDC logout flow, this integrates with `auth-server` logout flow making sure that on logout request
 user session is removed also on `auth-server` side. It also sets post logout redirect URL which is URL of `fe-client` React application.
 
+Next to `auth-server`.
+
+[authorizationServerSecurityFilterChain](https://github.com/GoodbyePlanet/spring-cg-bff/blob/45268092c70f4f92c30849403c7beb5b7808710d/auth-server/src/main/java/com/app/auth_server/config/AuthorizationServerConfiguration.java#L51)
+is the base security configuration for OAuth 2.0 authorization server endpoints. It configures essential services such as:
+`authorizationService` - Handles OAuth 2.0 authorizations.
+`authorizationConsentService` - Handles OAuth 2.0 user consents.
+`authorizationClientRepository` - Handles OAuth 2.0 client registrations.
+`OIDC` - Enables OpenID Connect support with default standard-compliant OIDC settings.
+This gives us `/userInfo` endpoint which is used by `gateway` to get user information.
+
+Security configuration also includes rules that require all requests to OAuth 2.0 endpoints to be authenticated.
+It also configures how unauthenticated requests are handled, in this case for HTML request it redirects to
+[custom login page](https://github.com/GoodbyePlanet/spring-cg-bff/blob/main/auth-server/src/main/resources/templates/loginPage.html).
+
+
+Next to the last service - `secure-resource`.
+[securityFilterChain](https://github.com/GoodbyePlanet/spring-cg-bff/blob/45268092c70f4f92c30849403c7beb5b7808710d/secure-resource/src/main/java/com/secure_resource/secure_resource/security/SecurityConfiguration.java#L16)
+is Resource Server security configuration. It sets up two authorization rules:
+1. The `/resource` endpoint requires the authority (OAuth2 scope) `SCOPE_resource.read`
+2. All other requests must be authenticated (as a fallback rule)
+
+`.oauth2ResourceServer` configures this service as an OAuth 2.0 resource server. And it defines the default JWT configuration.
+This configuration will create a secure endpoint `/resource` that will accept only valid JWT tokens and requires the `SCOPE_resource.read` scope
+to access protected resource.
+An important part in this service is [jwk-set-uri](https://github.com/GoodbyePlanet/spring-cg-bff/blob/45268092c70f4f92c30849403c7beb5b7808710d/secure-resource/src/main/resources/application.yml#L9)
+which tells Resource Server where to find the public keys for validating JWT tokens. This is a standard OAuth 2.0 endpoint
+that returns a JSON Web Key Set (JWKS) containing the public keys used to validate tokens. This endpoint is exposed by the
+Authorization Server.
+
+#### Conclusion
+
+In this blog post I have presented an example of how to implement OAuth 2.0 backend with BFF pattern for browser-based applications
+using Spring Security OAuth 2.0 authorization server, Spring Cloud Gateway for BFF,
+Sprint OAuth 2.0 Resource Server and React as a frontend client.
+Feel free to fork or clone the repository and try it out. The best way to learn is to get your hands dirty. :)
 
 
 
