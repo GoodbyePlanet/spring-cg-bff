@@ -1,4 +1,4 @@
-## Implementing BFF Pattern for Browser-Based Applications
+## Securing Your Web Apps: Spring Security OAuth 2.0 + BFF Pattern: A Complete Implementation Guide
 
 ### Introduction
 
@@ -200,10 +200,25 @@ Authorization Server.
 
 #### Conclusion
 
-In this blog post I have presented an example of how to implement OAuth 2.0 backend with BFF pattern for browser-based applications
-using Spring Security OAuth 2.0 authorization server, Spring Cloud Gateway for BFF,
-Sprint OAuth 2.0 Resource Server and React as a frontend client.
-Feel free to fork or clone the repository and try it out. The best way to learn is to get your hands dirty. :)
+In this guide, we've explored the implementation of a secure OAuth 2.0 backend utilizing the BFF pattern for browser-based applications.
+This architecture demonstrates several key benefits:
+
+1. **Enhanced Security**: By implementing the BFF pattern, we've moved sensitive token handling to the server side,
+significantly reducing the risk of token exposure through XSS attacks.
+
+2. **Clean Separation of Concerns**: Each component (Authorization Server, Resource Server, Gateway/BFF, and Frontend)
+has well-defined responsibilities, making the system more maintainable and scalable.
+
+3. **Modern Technology Stack**: The implementation leverages current best practices using Spring Security OAuth 2.0 authorization server,
+Spring Cloud Gateway, Spring OAuth 2.0 Resource Server, and React.
+
+4. **Production-Ready Features**: The solution includes essential components like Redis for session management, CSRF protection,
+and proper token management.
+
+The provided implementation serves as a practical reference for building secure, modern web applications following OAuth 2.0 security best practices.
+The complete source code is available in the [Github repository](https://github.com/GoodbyePlanet/spring-cg-bff).
+Feel free to fork or clone it to start building your own secure applications.
+Remember, hands-on experience is the best way to learn.
 
 
 
