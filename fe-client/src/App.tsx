@@ -20,6 +20,7 @@ const App: React.FC = () => {
   const getUserInfo = async (): Promise<void> => {
     try {
       const response = await axiosInstance.get('/userinfo');
+      console.log('RESPONSE DATA', response);
       if (response.data) {
         setIsAuthenticated(true);
         setUserName(response?.data?.sub);
