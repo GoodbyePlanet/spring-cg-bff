@@ -1,6 +1,6 @@
 package com.app.auth_server.config.auth_provider;
 
-import com.app.auth_server.service.PwnedPasswordService;
+import com.app.auth_server.service.LeakedPasswordsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,40 +13,37 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 @Component
 @Slf4j
-public class PwnedPasswordCheckingAuthenticationProvider implements AuthenticationProvider {
+public class LeakedPasswordsAuthenticationProvider implements AuthenticationProvider {
 
 	private final DaoAuthenticationProvider delegate;
-	private final PwnedPasswordService pwnedPasswordService;
+	private final LeakedPasswordsService leakedPasswordsService;
 
-	public PwnedPasswordCheckingAuthenticationProvider(
+	public LeakedPasswordsAuthenticationProvider(
 		UserDetailsService userDetailsService,
-		PwnedPasswordService pwnedPasswordService,
+		LeakedPasswordsService leakedPasswordsService,
 		PasswordEncoder passwordEncoder) {
 		this.delegate = new DaoAuthenticationProvider();
 		this.delegate.setUserDetailsService(userDetailsService);
 		this.delegate.setPasswordEncoder(passwordEncoder);
-		this.pwnedPasswordService = pwnedPasswordService;
+		this.leakedPasswordsService = leakedPasswordsService;
 	}
 
 	@Override
 	public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-		Authentication result = delegate.authenticate(authentication);
-
+		Authentication auth = delegate.authenticate(authentication);
 		String rawPassword = authentication.getCredentials().toString();
 
-		boolean pwned = pwnedPasswordService.isPwned(rawPassword);
+		boolean leaked = leakedPasswordsService.isPasswordLeaked(rawPassword);
 
-		log.info("IS PWNED {}", pwned);
-		if (pwned) {
-			((UsernamePasswordAuthenticationToken) result).setDetails(new HashMap<>(Map.of("pwned", true)));
+		if (leaked) {
+			((UsernamePasswordAuthenticationToken) auth)
+				.setDetails(new HashMap<>(Map.of("passwordLeaked", true)));
 		}
-		log.info("AUTHENTICATED {}", result);
 
-		return result;
+		return auth;
 	}
 
 	@Override

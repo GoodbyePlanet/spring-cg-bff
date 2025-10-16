@@ -8,6 +8,9 @@ oauth2:
   auth-server-url: ${AUTH_SERVER_URL:http://auth-server:9000}
   gateway-client-url: ${GATEWAY_CLIENT_URL:http://localhost:8081}
 
+leaked-passwords-api:
+  url: ${LEAKED_PASSWORDS_API_URL:http://localhost:8083}
+
 logging:
   level:
     root: INFO
