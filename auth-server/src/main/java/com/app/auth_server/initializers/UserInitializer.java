@@ -26,7 +26,7 @@ public class UserInitializer implements CommandLineRunner {
 
 		if (!userDetailsManager.userExists(username)) {
 			UserDetails user = User.withUsername(username)
-				.password(passwordEncoder.encode("pass"))
+				.password(passwordEncoder.encode("movies15"))
 				.roles("USER")
 				.build();
 

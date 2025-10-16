@@ -1,5 +1,6 @@
 package com.app.auth_server.config;
 
+import com.app.auth_server.config.auth_provider.LeakedPasswordsAuthenticationProvider;
 import com.app.auth_server.jpa.service.authorization.JpaAuthorizationService;
 import com.app.auth_server.jpa.service.authorizationconsent.JpaAuthorizationConsentService;
 import com.app.auth_server.jpa.service.client.JpaClientRepository;
@@ -11,21 +12,25 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.server.authorization.oidc.authentication.OidcUserInfoAuthenticationContext;
+import org.springframework.security.oauth2.server.authorization.oidc.authentication.OidcUserInfoAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 import javax.sql.DataSource;
+import java.util.function.Function;
 
 @Configuration
 @EnableWebSecurity
@@ -58,9 +63,10 @@ public class AuthorizationServerConfiguration {
 				authorizationServer.authorizationService(authorizationService);
 				authorizationServer.authorizationConsentService(authorizationConsentService);
 				authorizationServer.registeredClientRepository(registeredClientRepository);
-				authorizationServer.oidc(Customizer.withDefaults());
-			})
-			.authorizeHttpRequests((authorize) ->
+				authorizationServer.oidc(oidc ->
+					oidc.userInfoEndpoint(userInfo ->
+						userInfo.userInfoMapper(userInfoMapper())));
+			}).authorizeHttpRequests((authorize) ->
 				authorize.anyRequest().authenticated())
 			// Redirect to the login page when not authenticated from the authorization endpoint
 			.exceptionHandling((exceptions) -> exceptions
@@ -75,9 +81,11 @@ public class AuthorizationServerConfiguration {
 
 	@Bean
 	@Order(2)
-	public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
-		throws Exception {
-		http.authorizeHttpRequests((authorize) -> authorize
+	public SecurityFilterChain defaultSecurityFilterChain(
+		HttpSecurity http,
+		LeakedPasswordsAuthenticationProvider leakedPasswordsAuthenticationProvider) throws Exception {
+		http.authenticationProvider(leakedPasswordsAuthenticationProvider)
+			.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers("/main.css", "/login").permitAll().anyRequest().authenticated())
 			// Form login handles the redirect to the login page from the authorization server filter chain
 			.formLogin(formLogin -> formLogin.loginPage("/login").permitAll());
@@ -104,4 +112,13 @@ public class AuthorizationServerConfiguration {
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
+
+	private static Function<OidcUserInfoAuthenticationContext, OidcUserInfo> userInfoMapper() {
+		return (context) -> {
+			OidcUserInfoAuthenticationToken authentication = context.getAuthentication();
+			JwtAuthenticationToken principal = (JwtAuthenticationToken) authentication.getPrincipal();
+			return new OidcUserInfo(principal.getToken().getClaims());
+		};
+	}
+
 }

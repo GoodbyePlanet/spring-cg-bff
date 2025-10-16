@@ -36,6 +36,15 @@ yarn dev
 - **secure-resource** --- Spring Resource Server
 - **fe-client** --- React frontend application
 
+- **leaked-passwords-api** - Service for checking if the user password is leaked
+  - To start this service cloned it from this [Github repo](https://github.com/GoodbyePlanet/leaked-passwords-api).
+  - Then:
+```shell
+cd leaked-passwords-api
+docker build -t leaked-passwords-api .
+docker run --env-file .env.development -e APP_ENV=development -e RUNNING_IN_DOCKER=true -p 8083:8083 --network spring-cg-bff_default --name leaked-passwords-api leaked-passwords-api
+```
+
 #### Databases
 
 - oauth2-db --- MariaDB for storing Spring Authorization Server (registered clients, authorizations, consent screen)

@@ -8,6 +8,7 @@ const App: React.FC = () => {
   const [userName, setUserName] = useState<string>('');
   const [secureResource, setSecureResource] = useState<string>('');
   const [hasNoPermissionForResource, setHasNoPermissionForResource] = useState<boolean>(false);
+  const [passwordLeaked, setPasswordLeaked] = useState<boolean>(false);
 
   useEffect(() => {
     getUserInfo();
@@ -21,8 +22,10 @@ const App: React.FC = () => {
     try {
       const response = await axiosInstance.get('/userinfo');
       if (response.data) {
+        const data = response?.data;
         setIsAuthenticated(true);
-        setUserName(response?.data?.sub);
+        setUserName(data?.sub);
+        setPasswordLeaked(data?.passwordLeaked);
       }
     } catch (error) {
       console.error('Error getting user info', error);
@@ -66,6 +69,11 @@ const App: React.FC = () => {
             </form>
             <div className="flex flex-col items-center space-y-4">
               <span className="text-lg font-bold text-gray-800">Username: {userName?.toUpperCase()}</span>
+              {passwordLeaked && (
+                <span className="text-lg font-bold text-gray-800">
+                  Please change your password, it's been found in data breaches!
+                </span>
+              )}
               {!secureResource && (
                 <button
                   onClick={getSecureResource}

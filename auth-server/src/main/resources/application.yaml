@@ -8,12 +8,15 @@ oauth2:
   auth-server-url: ${AUTH_SERVER_URL:http://auth-server:9000}
   gateway-client-url: ${GATEWAY_CLIENT_URL:http://localhost:8081}
 
+leaked-passwords-api:
+  url: ${LEAKED_PASSWORDS_API_URL:http://localhost:8083}
+
 logging:
   level:
     root: INFO
     org.springframework.web: INFO
-    org.springframework.security: INFO
-    org.springframework.security.oauth2: INFO
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
 
 spring:
   datasource:
