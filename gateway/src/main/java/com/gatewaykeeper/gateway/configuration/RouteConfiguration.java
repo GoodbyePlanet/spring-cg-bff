@@ -12,14 +12,17 @@ public class RouteConfiguration {
 
 	private final String secureResourceUrl;
 	private final String authServerUrl;
+	private final String passkeysServiceUrl;
 	private final TokenRelayGatewayFilterFactory tokenRelay;
 
     public RouteConfiguration(TokenRelayGatewayFilterFactory tokenRelay,
                               @Value("${oauth2.secure-resource-url}") String secureResourceUrl,
-                              @Value("${oauth2.auth-server-url}") String authServerUrl) {
+                              @Value("${oauth2.auth-server-url}") String authServerUrl,
+		                      @Value("${oauth2.passkeys-service-url}") String passkeysServiceUrl) {
         this.tokenRelay = tokenRelay;
         this.secureResourceUrl = secureResourceUrl;
         this.authServerUrl = authServerUrl;
+		this.passkeysServiceUrl = passkeysServiceUrl;
     }
 
 	@Bean
@@ -33,6 +36,8 @@ public class RouteConfiguration {
 				.filters(f -> f.filters(tokenRelay.apply())
 					.removeRequestHeader("Cookie"))
 				.uri(authServerUrl))
+			.route("create-passkey", r -> r.path("/registration-begin")
+				.uri(passkeysServiceUrl))
 			.build();
 	}
 }

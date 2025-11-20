@@ -14,7 +14,7 @@ Update **/etc/hosts**
 This is required when running services via docker containers, and until I figure out how to make it running
 without changing **hosts** file
 
-#### To start all service
+#### To start all services
 ```
 ./build-and-run.sh
 ```

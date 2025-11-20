@@ -7,6 +7,7 @@ fe-app:
 oauth2:
   secure-resource-url: ${SECURE_RESOURCE_URL:http://secure-resource:9100}
   auth-server-url: ${AUTH_SERVER_URL:http://auth-server:9000}
+  passkeys-service-url: ${PASSKEYS_SERVICE_URL:http://passkeys-service:8085}
 
 logging:
   level:

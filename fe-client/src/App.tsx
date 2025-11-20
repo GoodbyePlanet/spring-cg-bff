@@ -51,6 +51,25 @@ const App: React.FC = () => {
     window.location.href = backendBaseUrl + '/oauth2/authorization/gateway';
   };
 
+  const handleRegisterPasskey = async (): Promise<void> => {
+    try {
+      const response = await axiosInstance.post(
+        '/registration-begin',
+        { username: 'jdoe' },
+        {
+          headers: {
+            'X-XSRF-TOKEN': getCookie('XSRF-TOKEN'),
+          },
+        }
+      );
+      if (response.data) {
+        console.log('RESPONSE DATA', response.data);
+      }
+    } catch (error: any) {
+      console.error('Error registering passkey', error);
+    }
+  };
+
   const xsrfCookie = (): string | undefined => getCookie('XSRF-TOKEN');
 
   return (
@@ -67,6 +86,12 @@ const App: React.FC = () => {
                 Logout
               </button>
             </form>
+            <button
+              className="absolute top-4 right-28 bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition"
+              onClick={handleRegisterPasskey}
+            >
+              Register passkey
+            </button>
             <div className="flex flex-col items-center space-y-4">
               <span className="text-lg font-bold text-gray-800">Username: {userName?.toUpperCase()}</span>
               {passwordLeaked && (
@@ -85,7 +110,10 @@ const App: React.FC = () => {
             </div>
           </>
         ) : (
-          <button onClick={login} className="px-4 py-1 border border-gray-800 rounded hover:bg-gray-200 text-sm">
+          <button
+            onClick={login}
+            className="px-4 py-1 border border-gray-800 text-white bg-black rounded hover:bg-gray-200 text-sm"
+          >
             Login
           </button>
         )}
@@ -96,7 +124,7 @@ const App: React.FC = () => {
               <p>You don't have enough permissions to access secure resource!</p>
               <button
                 onClick={authorizeSecureResource}
-                className="mt-3 px-4 py-1 border border-gray-800 text-white rounded hover:bg-gray-200 text-sm"
+                className="mt-3 px-4 py-1 border border-gray-800 text-white bg-black rounded hover:bg-gray-200 text-sm"
               >
                 Authorize Secure Resource
               </button>
