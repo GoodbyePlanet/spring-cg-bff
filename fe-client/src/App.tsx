@@ -5,7 +5,6 @@ const backendBaseUrl = import.meta.env.VITE_AUTH_BFF;
 
 interface RegisteredPasskey {
   name: string;
-  signCount: number;
   createdAt: string;
 }
 
@@ -35,6 +34,8 @@ const App: React.FC = () => {
         setIsAuthenticated(true);
         setUserName(data?.sub);
         setPasswordLeaked(data?.passwordLeaked);
+
+        await fetchRegisteredPasskeys(data?.sub);
       }
     } catch (error) {
       console.error('Error getting user info', error);
@@ -55,6 +56,7 @@ const App: React.FC = () => {
       }
     }
   };
+
   const authorizeSecureResource = async (): Promise<void> => {
     window.location.href = backendBaseUrl + '/oauth2/authorization/gateway';
   };
@@ -80,6 +82,7 @@ const App: React.FC = () => {
           id: cred.id,
           rawId: bufferToBase64url(cred.rawId),
           type: cred.type,
+          authenticatorAttachment: cred.authenticatorAttachment,
           response: {
             attestationObject: bufferToBase64url((cred.response as AuthenticatorAttestationResponse).attestationObject),
             clientDataJSON: bufferToBase64url((cred.response as AuthenticatorAttestationResponse).clientDataJSON),
@@ -91,16 +94,7 @@ const App: React.FC = () => {
         })) as { data: { status: string; username: string } };
 
         if (finishResp?.data?.status === 'registered') {
-          // TODO: Fetch registered passkeys on component mount
-          const resp = await axiosInstance.get(`/user-passkeys/${userName}`, {
-            headers: { 'X-XSRF-TOKEN': getCookie('XSRF-TOKEN') },
-          });
-
-          if (resp.data) {
-            setRegisteredPasskeys(_ => [...resp?.data?.userPasskeys.passkeys]);
-          } else {
-            setRegisteredPasskeys([]);
-          }
+          await fetchRegisteredPasskeys(userName);
         }
 
         setShowRegisterModal(false);
@@ -108,6 +102,22 @@ const App: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error registering passkey', error);
+    }
+  };
+
+  const fetchRegisteredPasskeys = async (userName: string) => {
+    try {
+      const resp = await axiosInstance.get(`/user-passkeys/${userName}`, {
+        headers: { 'X-XSRF-TOKEN': getCookie('XSRF-TOKEN') },
+      });
+
+      if (resp.data) {
+        setRegisteredPasskeys(_ => [...resp?.data?.userPasskeys?.passkeys]);
+      } else {
+        setRegisteredPasskeys([]);
+      }
+    } catch (error) {
+      console.error('Error fetching registered passkeys', error);
     }
   };
 
@@ -175,7 +185,6 @@ const App: React.FC = () => {
                     >
                       <span className="text-xs text-gray-500">Passkey #{i + 1}</span>
                       <span className="font-medium text-gray-900 dark:text-gray-100 pl-2">{p.name}</span>
-                      <span className="font-medium text-gray-900 dark:text-gray-100 pl-2">{p.signCount}</span>
                       <span className="font-medium text-gray-900 dark:text-gray-100 pl-2">{p.createdAt}</span>
                     </li>
                   ))}
