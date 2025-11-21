@@ -4,7 +4,9 @@ import axiosInstance, { getCookie } from './axios/axiosInstance';
 const backendBaseUrl = import.meta.env.VITE_AUTH_BFF;
 
 interface RegisteredPasskey {
-  username: string;
+  name: string;
+  signCount: number;
+  createdAt: string;
 }
 
 const App: React.FC = () => {
@@ -14,7 +16,7 @@ const App: React.FC = () => {
   const [hasNoPermissionForResource, setHasNoPermissionForResource] = useState<boolean>(false);
   const [passwordLeaked, setPasswordLeaked] = useState<boolean>(false);
   const [showRegisterModal, setShowRegisterModal] = useState<boolean>(false);
-  const [newPasskeyUsername, setNewPasskeyUsername] = useState<string>('');
+  const [newPasskeyName, setNewPasskeyName] = useState<string>('');
   const [registeredPasskeys, setRegisteredPasskeys] = useState<RegisteredPasskey[]>([]);
 
   useEffect(() => {
@@ -57,11 +59,11 @@ const App: React.FC = () => {
     window.location.href = backendBaseUrl + '/oauth2/authorization/gateway';
   };
 
-  const handleRegisterPasskey = async (username: string): Promise<void> => {
+  const handleRegisterPasskey = async (passkeyName: string): Promise<void> => {
     try {
       const response = await axiosInstance.post(
         '/registration-begin',
-        { username: userName, displayName: username },
+        { username: userName, displayName: userName },
         {
           headers: { 'X-XSRF-TOKEN': getCookie('XSRF-TOKEN') },
         }
@@ -84,13 +86,24 @@ const App: React.FC = () => {
           },
         };
 
-        const finishResp = await axiosInstance.post('/registration-finish', data, {
+        const finishResp = (await axiosInstance.post(`/registration-finish/${passkeyName}`, data, {
           headers: { 'X-XSRF-TOKEN': getCookie('XSRF-TOKEN') },
-        });
+        })) as { data: { status: string; username: string } };
 
-        setRegisteredPasskeys(prev => [...prev, { username }]);
+        if (finishResp?.data?.status === 'registered') {
+          const resp = await axiosInstance.get(`/user-passkeys/${userName}`, {
+            headers: { 'X-XSRF-TOKEN': getCookie('XSRF-TOKEN') },
+          });
+
+          if (resp.data) {
+            setRegisteredPasskeys(prev => [...prev, ...resp?.data?.userPasskeys.passkeys]);
+          } else {
+            setRegisteredPasskeys([]);
+          }
+        }
+
         setShowRegisterModal(false);
-        setNewPasskeyUsername('');
+        setNewPasskeyName('');
       }
     } catch (error: any) {
       console.error('Error registering passkey', error);
@@ -160,7 +173,9 @@ const App: React.FC = () => {
                       className="flex items-center justify-between bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-200 transition"
                     >
                       <span className="text-xs text-gray-500">Passkey #{i + 1}</span>
-                      <span className="font-medium text-gray-900 dark:text-gray-100 pl-2">{p.username}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100 pl-2">{p.name}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100 pl-2">{p.signCount}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100 pl-2">{p.createdAt}</span>
                     </li>
                   ))}
                 </ul>
@@ -194,7 +209,6 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal */}
       {showRegisterModal && (
         <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white text-black border-2 rounded-lg p-6 w-80">
@@ -202,9 +216,9 @@ const App: React.FC = () => {
             <input
               type="text"
               className="w-full border border-gray-300 rounded px-3 py-2 mb-4"
-              placeholder="Enter username"
-              value={newPasskeyUsername}
-              onChange={e => setNewPasskeyUsername(e.target.value)}
+              placeholder="Enter passkey name"
+              value={newPasskeyName}
+              onChange={e => setNewPasskeyName(e.target.value)}
             />
             <div className="flex justify-end space-x-2">
               <button
@@ -215,7 +229,7 @@ const App: React.FC = () => {
               </button>
               <button
                 className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
-                onClick={() => handleRegisterPasskey(newPasskeyUsername)}
+                onClick={() => handleRegisterPasskey(newPasskeyName)}
               >
                 Submit
               </button>

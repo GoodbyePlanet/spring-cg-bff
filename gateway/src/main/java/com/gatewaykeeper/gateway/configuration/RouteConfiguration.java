@@ -43,13 +43,22 @@ public class RouteConfiguration {
 					.removeRequestHeader("Origin")
 				)
 				.uri(passkeysServiceUrl))
-			.route("registration-finish", r -> r.path("/registration-finish")
+			.route("registration-finish", r -> r.path("/registration-finish/{passkeyName}")
 				.filters(f -> f
-					.rewritePath("/registration-finish", "/api/register/finish")
+					.rewritePath("/registration-finish/(?<passkeyName>.*)", "/api/register/finish?passkeyName=${passkeyName}")
 					.preserveHostHeader()
 					.removeRequestHeader("Origin")
 				)
 				.uri(passkeysServiceUrl))
+			.route("user-passkeys", r -> r
+				.path("/user-passkeys/{username}")
+				.filters(f -> f
+					.rewritePath("/user-passkeys/(?<username>.*)", "/api/users/${username}/registered-passkeys")
+					.preserveHostHeader()
+					.removeRequestHeader("Origin")
+				)
+				.uri(passkeysServiceUrl)
+			)
 			.build();
 	}
 }
