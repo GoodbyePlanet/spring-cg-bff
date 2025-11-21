@@ -37,12 +37,22 @@ yarn dev
 - **fe-client** --- React frontend application
 
 - **leaked-passwords-api** - Service for checking if the user password is leaked
-  - To start this service cloned it from this [Github repo](https://github.com/GoodbyePlanet/leaked-passwords-api).
-  - Then:
+    - To start this service cloned it from this [Github repo](https://github.com/GoodbyePlanet/leaked-passwords-api).
+    - Then:
 ```shell
 cd leaked-passwords-api
 docker build -t leaked-passwords-api .
 docker run --env-file .env.development -e APP_ENV=development -e RUNNING_IN_DOCKER=true -p 8083:8083 --network spring-cg-bff_default --name leaked-passwords-api leaked-passwords-api
+```
+
+- **passkeys-service** - Service for WebAuthn passwordless authentication
+  - To start this service cloned it from this [Github repo](https://github.com/GoodbyePlanet/passkey-service).
+  - Then:
+```shell
+cd passkey-service
+make docker-build
+make up
+docker network connect spring-cg-bff_default passkeys-service # connect to network of apps started by docker-compose from this repository
 ```
 
 #### Databases

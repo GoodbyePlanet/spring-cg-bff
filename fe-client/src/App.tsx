@@ -91,12 +91,13 @@ const App: React.FC = () => {
         })) as { data: { status: string; username: string } };
 
         if (finishResp?.data?.status === 'registered') {
+          // TODO: Fetch registered passkeys on component mount
           const resp = await axiosInstance.get(`/user-passkeys/${userName}`, {
             headers: { 'X-XSRF-TOKEN': getCookie('XSRF-TOKEN') },
           });
 
           if (resp.data) {
-            setRegisteredPasskeys(prev => [...prev, ...resp?.data?.userPasskeys.passkeys]);
+            setRegisteredPasskeys(_ => [...resp?.data?.userPasskeys.passkeys]);
           } else {
             setRegisteredPasskeys([]);
           }
