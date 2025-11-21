@@ -3,12 +3,19 @@ import axiosInstance, { getCookie } from './axios/axiosInstance';
 
 const backendBaseUrl = import.meta.env.VITE_AUTH_BFF;
 
+interface RegisteredPasskey {
+  username: string;
+}
+
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>('');
   const [secureResource, setSecureResource] = useState<string>('');
   const [hasNoPermissionForResource, setHasNoPermissionForResource] = useState<boolean>(false);
   const [passwordLeaked, setPasswordLeaked] = useState<boolean>(false);
+  const [showRegisterModal, setShowRegisterModal] = useState<boolean>(false);
+  const [newPasskeyUsername, setNewPasskeyUsername] = useState<string>('');
+  const [registeredPasskeys, setRegisteredPasskeys] = useState<RegisteredPasskey[]>([]);
 
   useEffect(() => {
     getUserInfo();
@@ -46,28 +53,61 @@ const App: React.FC = () => {
       }
     }
   };
-
   const authorizeSecureResource = async (): Promise<void> => {
     window.location.href = backendBaseUrl + '/oauth2/authorization/gateway';
   };
 
-  const handleRegisterPasskey = async (): Promise<void> => {
+  const handleRegisterPasskey = async (username: string): Promise<void> => {
     try {
       const response = await axiosInstance.post(
         '/registration-begin',
-        { username: 'jdoe' },
+        { username: userName, displayName: username },
         {
-          headers: {
-            'X-XSRF-TOKEN': getCookie('XSRF-TOKEN'),
-          },
+          headers: { 'X-XSRF-TOKEN': getCookie('XSRF-TOKEN') },
         }
       );
+
       if (response.data) {
-        console.log('RESPONSE DATA', response.data);
+        const publicKey = response.data.publicKey;
+        publicKey.challenge = Uint8Array.from(atob(base64urlToBase64(publicKey.challenge)), c => c.charCodeAt(0));
+        publicKey.user.id = Uint8Array.from(atob(base64urlToBase64(publicKey.user.id)), c => c.charCodeAt(0));
+
+        const cred = (await navigator.credentials.create({ publicKey })) as PublicKeyCredential;
+
+        const data = {
+          id: cred.id,
+          rawId: bufferToBase64url(cred.rawId),
+          type: cred.type,
+          response: {
+            attestationObject: bufferToBase64url((cred.response as AuthenticatorAttestationResponse).attestationObject),
+            clientDataJSON: bufferToBase64url((cred.response as AuthenticatorAttestationResponse).clientDataJSON),
+          },
+        };
+
+        const finishResp = await axiosInstance.post('/registration-finish', data, {
+          headers: { 'X-XSRF-TOKEN': getCookie('XSRF-TOKEN') },
+        });
+
+        setRegisteredPasskeys(prev => [...prev, { username }]);
+        setShowRegisterModal(false);
+        setNewPasskeyUsername('');
       }
     } catch (error: any) {
       console.error('Error registering passkey', error);
     }
+  };
+
+  const base64urlToBase64 = (base64url: string) => {
+    base64url = base64url.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = base64url.length % 4;
+    return base64url + (pad ? '='.repeat(4 - pad) : '');
+  };
+
+  const bufferToBase64url = (buffer: ArrayBuffer) => {
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
   };
 
   const xsrfCookie = (): string | undefined => getCookie('XSRF-TOKEN');
@@ -86,12 +126,6 @@ const App: React.FC = () => {
                 Logout
               </button>
             </form>
-            <button
-              className="absolute top-4 right-28 bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition"
-              onClick={handleRegisterPasskey}
-            >
-              Register passkey
-            </button>
             <div className="flex flex-col items-center space-y-4">
               <span className="text-lg font-bold text-gray-800">Username: {userName?.toUpperCase()}</span>
               {passwordLeaked && (
@@ -107,7 +141,31 @@ const App: React.FC = () => {
                   Get Secure Resource
                 </button>
               )}
+              <button
+                className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition"
+                onClick={() => setShowRegisterModal(true)}
+              >
+                Register passkey
+              </button>
             </div>
+
+            {/* Registered passkeys list */}
+            {registeredPasskeys.length > 0 && (
+              <div className="text-black flex flex-col items-center mt-3">
+                <h3 className="font-bold text-lg mb-2">Registered Passkeys:</h3>
+                <ul className="list-disc list-inside">
+                  {registeredPasskeys.map((p, i) => (
+                    <li
+                      key={i}
+                      className="flex items-center justify-between bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-200 transition"
+                    >
+                      <span className="text-xs text-gray-500">Passkey #{i + 1}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100 pl-2">{p.username}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </>
         ) : (
           <button
@@ -118,20 +176,53 @@ const App: React.FC = () => {
           </button>
         )}
         <div className="mt-3 font-bold text-black bg-white flex flex-col items-center justify-center">
-          {secureResource && <p>{secureResource}</p>}
+          {' '}
+          {secureResource && <p>{secureResource}</p>}{' '}
           {hasNoPermissionForResource && (
             <>
-              <p>You don't have enough permissions to access secure resource!</p>
+              {' '}
+              <p>You don't have enough permissions to access secure resource!</p>{' '}
               <button
                 onClick={authorizeSecureResource}
                 className="mt-3 px-4 py-1 border border-gray-800 text-white bg-black rounded hover:bg-gray-200 text-sm"
               >
-                Authorize Secure Resource
-              </button>
+                {' '}
+                Authorize Secure Resource{' '}
+              </button>{' '}
             </>
-          )}
+          )}{' '}
         </div>
       </div>
+
+      {/* Modal */}
+      {showRegisterModal && (
+        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white text-black border-2 rounded-lg p-6 w-80">
+            <h2 className="text-lg font-bold mb-4">Register Passkey</h2>
+            <input
+              type="text"
+              className="w-full border border-gray-300 rounded px-3 py-2 mb-4"
+              placeholder="Enter username"
+              value={newPasskeyUsername}
+              onChange={e => setNewPasskeyUsername(e.target.value)}
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                className="px-4 py-2 text-white bg-gray-200 rounded hover:bg-gray-300"
+                onClick={() => setShowRegisterModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
+                onClick={() => handleRegisterPasskey(newPasskeyUsername)}
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

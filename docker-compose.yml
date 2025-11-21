@@ -81,6 +81,7 @@ services:
       FE_APP_BASE_URL: http://localhost:5173
       AUTH_SERVER_URL: http://auth-server:9000
       SECURE_RESOURCE_URL: http://secure-resource:9100
+      PASSKEYS_SERVICE_URL: http://passkeys-service:8085
     networks:
       - default
       - observability
