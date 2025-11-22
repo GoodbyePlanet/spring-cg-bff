@@ -85,8 +85,9 @@ public class AuthorizationServerConfiguration {
 		HttpSecurity http,
 		LeakedPasswordsAuthenticationProvider leakedPasswordsAuthenticationProvider) throws Exception {
 		http.authenticationProvider(leakedPasswordsAuthenticationProvider)
+			.csrf(csrf -> csrf.ignoringRequestMatchers("/webauthn/begin"))
 			.authorizeHttpRequests((authorize) -> authorize
-				.requestMatchers("/main.css", "/login").permitAll().anyRequest().authenticated())
+				.requestMatchers("/main.css", "/login", "/webauthn/begin").permitAll().anyRequest().authenticated())
 			// Form login handles the redirect to the login page from the authorization server filter chain
 			.formLogin(formLogin -> formLogin.loginPage("/login").permitAll());
 

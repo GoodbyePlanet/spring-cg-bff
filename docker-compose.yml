@@ -62,6 +62,7 @@ services:
       AUTH_SERVER_URL: http://auth-server:9000
       GATEWAY_CLIENT_URL: http://localhost:8081
       LEAKED_PASSWORDS_API_URL: http://leaked-passwords-api:8083
+      PASSKEYS_SERVICE_URL: http://passkeys-service:8085
     networks:
       - default
       - observability
