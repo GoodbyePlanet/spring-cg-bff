@@ -39,9 +39,9 @@ public class Oauth2ClientConfiguration {
 			.authorizationUri(authServerUrl + "/oauth2/authorize")
 
 			// 2. Internal Docker Network (Gateway container uses this)
-			.tokenUri("http://auth-server:9000/oauth2/token")
-			.jwkSetUri("http://auth-server:9000/oauth2/jwks")
-			.userInfoUri("http://auth-server:9000/userinfo")
+			.tokenUri("http://auth-server:9000/auth/oauth2/token")
+			.jwkSetUri("http://auth-server:9000/auth/oauth2/jwks")
+			.userInfoUri("http://auth-server:9000/auth/userinfo")
 
 			.userNameAttributeName(IdTokenClaimNames.SUB)
 			.clientName(GATEWAY)

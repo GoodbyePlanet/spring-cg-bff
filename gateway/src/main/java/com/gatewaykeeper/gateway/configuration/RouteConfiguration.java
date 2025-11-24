@@ -33,7 +33,9 @@ public class RouteConfiguration {
 					.removeRequestHeader("Cookie")) // Prevents cookie being sent downstream
 				.uri(secureResourceUrl))
 			.route("userinfo", r -> r.path("/userinfo")
-				.filters(f -> f.filters(tokenRelay.apply())
+				.filters(f -> f
+					.rewritePath("/userinfo", "/auth/userinfo")
+					.filters(tokenRelay.apply())
 					.removeRequestHeader("Cookie"))
 				.uri(authServerInternalUrl))
 			.route("registration-begin", r -> r.path("/registration-begin")

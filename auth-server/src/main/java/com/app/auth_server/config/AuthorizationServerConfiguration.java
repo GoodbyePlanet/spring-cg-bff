@@ -1,6 +1,8 @@
 package com.app.auth_server.config;
 
-import com.app.auth_server.config.auth_provider.LeakedPasswordsAuthenticationProvider;
+import com.app.auth_server.config.leaked_passwords_auth_provider.LeakedPasswordsAuthenticationProvider;
+import com.app.auth_server.config.web_authn_auth_provider.WebAuthnAuthenticationDetailsSource;
+import com.app.auth_server.config.web_authn_auth_provider.WebAuthnAuthenticationProvider;
 import com.app.auth_server.jpa.service.authorization.JpaAuthorizationService;
 import com.app.auth_server.jpa.service.authorizationconsent.JpaAuthorizationConsentService;
 import com.app.auth_server.jpa.service.client.JpaClientRepository;
@@ -27,7 +29,6 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
-import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 import javax.sql.DataSource;
@@ -84,11 +85,13 @@ public class AuthorizationServerConfiguration {
 	@Order(2)
 	public SecurityFilterChain defaultSecurityFilterChain(
 		HttpSecurity http,
-		LeakedPasswordsAuthenticationProvider leakedPasswordsAuthenticationProvider) throws Exception {
+		LeakedPasswordsAuthenticationProvider leakedPasswordsAuthenticationProvider,
+		WebAuthnAuthenticationProvider webAuthnAuthenticationProvider,
+		WebAuthnAuthenticationDetailsSource webAuthnAuthenticationDetailsSource) throws Exception {
 
-//		HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
-
-		http.authenticationProvider(leakedPasswordsAuthenticationProvider)
+		http
+			.authenticationProvider(leakedPasswordsAuthenticationProvider)
+			.authenticationProvider(webAuthnAuthenticationProvider)
 			.csrf(csrf -> csrf.ignoringRequestMatchers("/webauthn/begin"))
 			.authorizeHttpRequests((authorize) -> authorize
 				.requestMatchers(
@@ -99,12 +102,13 @@ public class AuthorizationServerConfiguration {
 					"/favicon.ico",
 					"/.well-known/**",
 					"/assets/**"
-				).permitAll()
+				)
+				.permitAll()
 				.anyRequest().authenticated())
-//			.requestCache((cache) -> cache
-//				.requestCache(requestCache)
-//			)
-			.formLogin(formLogin -> formLogin.loginPage("/login").permitAll());
+			.formLogin(formLogin -> formLogin
+				.loginPage("/login")
+				.authenticationDetailsSource(webAuthnAuthenticationDetailsSource)
+				.permitAll());
 
 		return http.build();
 	}

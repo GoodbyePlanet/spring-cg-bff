@@ -1,10 +1,13 @@
 package com.app.auth_server.webauthn;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -13,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -47,11 +51,35 @@ public class WebAuthnService {
 	public String finishAuthentication(Map<String, Object> finishBody) {
 		final String url = passkeysServiceUrl + "/api/authenticate/finish";
 
+		String sidCookieValue = getSidCookieValue();
+		log.info("SID COOKIE: {}", sidCookieValue);
+		HttpHeaders headers = new HttpHeaders();
+
+		if (sidCookieValue != null) {
+			headers.add(HttpHeaders.COOKIE, PASSKEY_SESSION_COOKIE_NAME + "=" + sidCookieValue);
+		}
+		HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(finishBody, headers);
+
 		try {
-			ResponseEntity<String> response = restTemplate.postForEntity(url, finishBody, String.class);
+			ResponseEntity<String> response = restTemplate.postForEntity(url, requestEntity, String.class);
 			return response.getBody();
 		} catch (HttpClientErrorException e) {
 			throw new WebAuthnException("Passkey finish failed", e);
 		}
+	}
+
+	private String getSidCookieValue() {
+		ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+		if (attributes != null) {
+			HttpServletRequest request = attributes.getRequest();
+			if (request.getCookies() != null) {
+				return Arrays.stream(request.getCookies())
+					.filter(cookie -> PASSKEY_SESSION_COOKIE_NAME.equals(cookie.getName()))
+					.map(Cookie::getValue)
+					.findFirst()
+					.orElse(null);
+			}
+		}
+		return null;
 	}
 }

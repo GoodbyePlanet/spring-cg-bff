@@ -1,7 +1,7 @@
 #!/bin/sh
 # wait-for-auth.sh – wait until the auth server's OpenID configuration endpoint is reachable
 
-AUTH_URL="http://auth-server:9000/.well-known/openid-configuration"
+AUTH_URL="http://auth-server:9000/auth/.well-known/openid-configuration"
 echo "Waiting for Auth server at $AUTH_URL ..."
 
 # Loop until curl succeeds (exit code 0) with HTTP 2xx
