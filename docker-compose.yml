@@ -44,6 +44,26 @@ services:
     ports:
       - "8082:8081"
 
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--log.level=DEBUG" # Add debug logging
+    ports:
+      - "80:80"
+      - "8087:8080" # Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      default:
+        aliases:
+          - auth.localhost
+
   auth-server:
     build:
       context: ./auth-server
@@ -58,11 +78,15 @@ services:
       MARIADB_USER_NAME: oauth
       MARIADB_PASSWORD: oauth
       SPRING_APPLICATION_NAME: auth-server
-      FE_APP_BASE_URL: http://localhost:5173
-      AUTH_SERVER_URL: http://auth-server:9000
-      GATEWAY_CLIENT_URL: http://localhost:8081
+      FE_APP_BASE_URL: http://localhost
+      AUTH_SERVER_URL: http://auth.localhost
+      GATEWAY_CLIENT_URL: http://localhost
       LEAKED_PASSWORDS_API_URL: http://leaked-passwords-api:8083
       PASSKEYS_SERVICE_URL: http://passkeys-service:8085
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`auth.localhost`)"
+      - "traefik.http.services.auth.loadbalancer.server.port=9000"
     networks:
       - default
       - observability
@@ -79,13 +103,41 @@ services:
       - auth-server
     environment:
       SPRING_APPLICATION_NAME: gateway
-      FE_APP_BASE_URL: http://localhost:5173
-      AUTH_SERVER_URL: http://auth-server:9000
+      AUTH_SERVER_URL: http://auth.localhost
+      FE_APP_BASE_URL: http://localhost
       SECURE_RESOURCE_URL: http://secure-resource:9100
       PASSKEYS_SERVICE_URL: http://passkeys-service:8085
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gateway.rule=Host(`localhost`) && (PathPrefix(`/bff`) || PathPrefix(`/login`) || PathPrefix(`/oauth2`) || PathPrefix(`/logout`) || PathPrefix(`/userinfo`) || PathPrefix(`/resource`) || PathPrefix(`/registration-begin`) || PathPrefix(`/registration-finish`) || PathPrefix(`/user-passkeys`))"
+      - "traefik.http.services.gateway.loadbalancer.server.port=8081"
+    links:
+      # This tells the gateway: "When you lookup 'auth.localhost', ask the 'traefik' container."
+      - traefik:auth.localhost
+    extra_hosts:
+      - "auth.localhost:host-gateway"
+    networks:
+      default:
+        aliases:
+          - auth.localhost  # Traefik will respond to this hostname
+          - app.localhost
+
+  fe-client:
+    build:
+      context: ./fe-client
+      args:
+        - VITE_AUTH_URL=http://auth.localhost
+        - VITE_AUTH_BFF=http://localhost
+    container_name: fe-client
+    environment:
+      VITE_AUTH_URL: http://auth.localhost
+      VITE_AUTH_BFF: http://localhost
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
     networks:
       - default
-      - observability
 
   secure-resource:
     build:
@@ -99,7 +151,7 @@ services:
       - auth-server
     environment:
       SPRING_APPLICATION_NAME: secure-resource
-      JWT_SET_URI: http://auth-server:9000/oauth2/jwks
+      JWT_SET_URI: http://auth.localhost/oauth2/jwks
     networks:
       - default
       - observability

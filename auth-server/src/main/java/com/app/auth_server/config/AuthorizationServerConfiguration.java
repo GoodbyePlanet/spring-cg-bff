@@ -27,6 +27,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 import javax.sql.DataSource;
@@ -84,11 +85,25 @@ public class AuthorizationServerConfiguration {
 	public SecurityFilterChain defaultSecurityFilterChain(
 		HttpSecurity http,
 		LeakedPasswordsAuthenticationProvider leakedPasswordsAuthenticationProvider) throws Exception {
+
+//		HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
+
 		http.authenticationProvider(leakedPasswordsAuthenticationProvider)
 			.csrf(csrf -> csrf.ignoringRequestMatchers("/webauthn/begin"))
 			.authorizeHttpRequests((authorize) -> authorize
-				.requestMatchers("/main.css", "/login", "/webauthn/begin").permitAll().anyRequest().authenticated())
-			// Form login handles the redirect to the login page from the authorization server filter chain
+				.requestMatchers(
+					"/main.css",
+					"/login",
+					"/webauthn/begin",
+					"/error",
+					"/favicon.ico",
+					"/.well-known/**",
+					"/assets/**"
+				).permitAll()
+				.anyRequest().authenticated())
+//			.requestCache((cache) -> cache
+//				.requestCache(requestCache)
+//			)
 			.formLogin(formLogin -> formLogin.loginPage("/login").permitAll());
 
 		return http.build();

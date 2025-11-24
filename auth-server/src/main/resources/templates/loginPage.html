@@ -118,7 +118,9 @@
 
         try {
             // TODO: stopped here, try this next with {publicKey}
+            console.log("here", publicKey)
             const assertion = await navigator.credentials.get({publicKey});
+            console.log("here", assertion)
 
             document.getElementById("id").value = assertion.id;
             document.getElementById("type").value = assertion.type;
@@ -129,6 +131,7 @@
             document.getElementById("signature").value = bufferToBase64url(assertion.response.signature);
             document.getElementById("userHandle").value = assertion.response.userHandle ? bufferToBase64url(assertion.response.userHandle) : "";
 
+            console.log("just before submit")
             loginForm.submit();
 
         } catch (err) {

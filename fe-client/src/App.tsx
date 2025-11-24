@@ -19,11 +19,12 @@ const App: React.FC = () => {
   const [registeredPasskeys, setRegisteredPasskeys] = useState<RegisteredPasskey[]>([]);
 
   useEffect(() => {
+    console.log("BACKEND URL", backendBaseUrl);
     getUserInfo();
   }, []);
 
   const login = () => {
-    window.location.href = backendBaseUrl;
+    window.location.href = "/oauth2/authorization/gateway";
   };
 
   const getUserInfo = async (): Promise<void> => {
@@ -141,7 +142,7 @@ const App: React.FC = () => {
       <div className="relative min-h-screen w-screen bg-white flex flex-col items-center justify-center">
         {isAuthenticated ? (
           <>
-            <form id="logout-form" action="http://localhost:8081/logout" method="POST">
+            <form id="logout-form" action="/logout" method="POST">
               <input type="hidden" name="_csrf" value={xsrfCookie()} />
               <button
                 type="submit"
