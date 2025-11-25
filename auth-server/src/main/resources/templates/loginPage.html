@@ -4,8 +4,9 @@
         xmlns:th="http://www.thymeleaf.org"
         class="h-full bg-white">
 <head>
-    <title>Custom Login Page</title>
-    <link th:href="@{/main.css}" rel="stylesheet" />
+    <title>Sign In</title>
+    <link th:href="@{/main.css}" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="h-full">
 
@@ -13,33 +14,37 @@
 
     <div class="sm:mx-auto sm:w-full sm:max-w-sm">
         <h2 class="text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-            Log in
+            Sign in
         </h2>
     </div>
 
     <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-        <div th:if="${param.error}" class="rounded-md bg-red-50 p-4">
+        <!-- Error Message -->
+        <div th:if="${param.error}" class="mb-4 rounded-md bg-red-50 p-4">
             <div class="flex">
                 <div class="ml-3">
-                    <h3 class="text-sm font-medium text-red-800">Invalid login</h3>
+                    <h3 class="text-sm font-medium text-red-800">Invalid username or password</h3>
                 </div>
             </div>
         </div>
 
         <form id="login-form" class="space-y-6" th:action="@{/login}" method="POST">
+            <!-- Username Field -->
             <div>
-                <label for="username" class="block text-sm font-medium text-gray-900">Username</label>
+                <label for="username" class="block text-sm font-medium leading-6 text-gray-900">Username</label>
                 <div class="mt-2">
                     <input id="username" name="username" type="text" required
-                           class="block w-full rounded-md border-0 py-1.5">
+                           class="block w-full rounded-md border border-gray-300 py-1.5 text-gray-900 shadow-sm placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-black sm:text-sm sm:leading-6 px-3">
                 </div>
             </div>
 
-            <!-- Hidden password field → shown only if passkeys fail -->
+            <!-- Password Field (Hidden Initially) -->
             <div id="password-section" class="hidden">
-                <label for="password" class="block text-sm font-medium text-gray-900">Password</label>
-                <input id="password" name="password" type="password"
-                       class="block w-full rounded-md border-0 py-1.5">
+                <label for="password" class="block text-sm font-medium leading-6 text-gray-900">Password</label>
+                <div class="mt-2">
+                    <input id="password" name="password" type="password"
+                           class="block w-full rounded-md border border-gray-300 py-1.5 text-gray-900 shadow-sm placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-black sm:text-sm sm:leading-6 px-3">
+                </div>
             </div>
 
             <!-- Hidden fields for passkey final POST -->
@@ -52,13 +57,15 @@
             <input type="hidden" id="signature" name="signature"/>
             <input type="hidden" id="userHandle" name="userHandle"/>
 
+            <!-- Continue Button (For WebAuthn Check) -->
             <button id="next-button" type="button"
-                    class="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-white">
+                    class="flex w-full justify-center rounded-md bg-black px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">
                 Continue
             </button>
 
-            <button id="login-button" type="submit" class="hidden
-               flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-white">
+            <!-- Login Button (For Password Fallback) -->
+            <button id="login-button" type="submit"
+                    class="hidden w-full justify-center rounded-md bg-black px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">
                 Login
             </button>
         </form>
@@ -71,70 +78,73 @@
     const loginButton = document.getElementById("login-button");
     const loginForm = document.getElementById("login-form");
 
+    function switchToPasswordMode() {
+        passwordSection.classList.remove("hidden");
+        nextBtn.classList.add("hidden");
+        loginButton.classList.remove("hidden");
+        loginButton.classList.add("flex");
+    }
+
     function bufferToBase64url(buffer) {
         return btoa(String.fromCharCode(...new Uint8Array(buffer)))
             .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     }
 
     nextBtn.onclick = async () => {
-        console.log("start passkey auth")
         const username = document.getElementById("username").value;
 
-        const res = await fetch("/auth/webauthn/begin", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({username})
-        });
-
-        if (!res.ok) {
-            passwordSection.classList.remove("hidden");
-            nextBtn.classList.add("hidden");
-            loginButton.classList.remove("hidden");
+        if (!username) {
             return;
         }
 
-        const options = await res.json();
-        const publicKey = options.publicKey;
-
-        publicKey.challenge = Uint8Array.from(
-            atob(publicKey.challenge.replace(/-/g, "+").replace(/_/g, "/")),
-            c => c.charCodeAt(0)
-        );
-
-        if (publicKey.allowCredentials) {
-            publicKey.allowCredentials = publicKey.allowCredentials.map(cred => ({
-                ...cred,
-                id: Uint8Array.from(
-                    atob(cred.id.replace(/-/g, "+").replace(/_/g, "/")),
-                    c => c.charCodeAt(0)
-                )
-            }));
-        }
-
         try {
+            const res = await fetch("/auth/webauthn/begin", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({username})
+            });
+
+            if (!res.ok) {
+                // PASSKEY FAIL/NOT FOUND → Show the password field
+                switchToPasswordMode();
+                return;
+            }
+
+            const options = await res.json();
+            const publicKey = options.publicKey;
+
+            publicKey.challenge = Uint8Array.from(
+                atob(publicKey.challenge.replace(/-/g, "+").replace(/_/g, "/")),
+                c => c.charCodeAt(0)
+            );
+
+            if (publicKey.allowCredentials) {
+                publicKey.allowCredentials = publicKey.allowCredentials.map(cred => ({
+                    ...cred,
+                    id: Uint8Array.from(
+                        atob(cred.id.replace(/-/g, "+").replace(/_/g, "/")),
+                        c => c.charCodeAt(0)
+                    )
+                }));
+            }
+
             const assertion = await navigator.credentials.get({publicKey});
 
             document.getElementById("id").value = assertion.id;
             document.getElementById("type").value = assertion.type;
-            document.getElementById("authenticatorAttachment").value =
-                assertion.authenticatorAttachment ?? "";
-            document.getElementById("rawId").value =
-                bufferToBase64url(assertion.rawId);
-            document.getElementById("authenticatorData").value =
-                bufferToBase64url(assertion.response.authenticatorData);
-            document.getElementById("clientDataJSON").value =
-                bufferToBase64url(assertion.response.clientDataJSON);
-            document.getElementById("signature").value =
-                bufferToBase64url(assertion.response.signature);
-            document.getElementById("userHandle").value =
-                assertion.response.userHandle
-                    ? bufferToBase64url(assertion.response.userHandle)
-                    : "";
+            document.getElementById("authenticatorAttachment").value = assertion.authenticatorAttachment ?? "";
+            document.getElementById("rawId").value = bufferToBase64url(assertion.rawId);
+            document.getElementById("authenticatorData").value = bufferToBase64url(assertion.response.authenticatorData);
+            document.getElementById("clientDataJSON").value = bufferToBase64url(assertion.response.clientDataJSON);
+            document.getElementById("signature").value = bufferToBase64url(assertion.response.signature);
+            document.getElementById("userHandle").value = assertion.response.userHandle ? bufferToBase64url(assertion.response.userHandle) : "";
+
             loginForm.submit();
+
         } catch (err) {
-            passwordSection.classList.remove("hidden");
-            nextBtn.classList.add("hidden");
-            loginButton.classList.remove("hidden");
+            console.error("WebAuthn error", err);
+            // If the user cancels or any other error, fall back to password
+            switchToPasswordMode();
         }
     }
 </script>
