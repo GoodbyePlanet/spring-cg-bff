@@ -13,12 +13,11 @@
 
     <div class="sm:mx-auto sm:w-full sm:max-w-sm">
         <h2 class="text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-            Sign in
+            Log in
         </h2>
     </div>
 
     <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-        <!-- Error -->
         <div th:if="${param.error}" class="rounded-md bg-red-50 p-4">
             <div class="flex">
                 <div class="ml-3">
@@ -88,7 +87,6 @@
         });
 
         if (!res.ok) {
-            // PASSKEY FAIL → show the password field instead
             passwordSection.classList.remove("hidden");
             nextBtn.classList.add("hidden");
             loginButton.classList.remove("hidden");
@@ -132,7 +130,6 @@
                 assertion.response.userHandle
                     ? bufferToBase64url(assertion.response.userHandle)
                     : "";
-            console.log("just before submit")
             loginForm.submit();
         } catch (err) {
             passwordSection.classList.remove("hidden");

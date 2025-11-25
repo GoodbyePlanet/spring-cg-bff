@@ -11,7 +11,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -53,17 +56,24 @@ public class WebAuthnAuthenticationProvider implements AuthenticationProvider {
 				log.debug("WebAuthn authentication successful: {}", response);
 				UserDetails user = userDetailsService.loadUserByUsername(username);
 
-				return UsernamePasswordAuthenticationToken.authenticated(
+				UsernamePasswordAuthenticationToken token = UsernamePasswordAuthenticationToken.authenticated(
 					user,
 					null,
 					user.getAuthorities()
 				);
+
+				if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
+					token.setDetails(new WebAuthenticationDetails(attributes.getRequest()));
+				}
+				return token;
 
 			} catch (WebAuthnException e) {
 				log.error("WebAuthn validation failed", e);
 				throw new BadCredentialsException("Invalid Passkey", e);
 			}
 		}
+
+		log.debug("No WebAuthn request found, fallback to standard authentication");
 
 		// If no WebAuthn data is present, return null to let DaoAuthenticationProvider
 		// handle standard password checking.
