@@ -1,4 +1,6 @@
 ### Spring authorization server with Spring Cloud Gateway as a BFF
+Contains implementation of Backend-for-Frontend (BFF) pattern for browser-based applications using Spring Authorization Server and Spring Cloud Gateway.
+Additionally, it includes passkeys-service for WebAuthn passwordless authentication and leaked-passwords-api for checking if user passwords have been compromised.
 
 ##### Implementation of [BFF pattern](https://www.ietf.org/archive/id/draft-ietf-oauth-browser-based-apps-15.html#name-backend-for-frontend-bff) for browser-based applications
 
