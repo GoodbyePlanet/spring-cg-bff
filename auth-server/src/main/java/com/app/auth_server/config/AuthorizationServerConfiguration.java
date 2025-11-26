@@ -1,6 +1,8 @@
 package com.app.auth_server.config;
 
-import com.app.auth_server.config.auth_provider.LeakedPasswordsAuthenticationProvider;
+import com.app.auth_server.config.authProviders.LeakedPasswordsAuthenticationProvider;
+import com.app.auth_server.config.authProviders.WebAuthnAuthenticationDetailsSource;
+import com.app.auth_server.config.authProviders.WebAuthnAuthenticationProvider;
 import com.app.auth_server.jpa.service.authorization.JpaAuthorizationService;
 import com.app.auth_server.jpa.service.authorizationconsent.JpaAuthorizationConsentService;
 import com.app.auth_server.jpa.service.client.JpaClientRepository;
@@ -83,12 +85,29 @@ public class AuthorizationServerConfiguration {
 	@Order(2)
 	public SecurityFilterChain defaultSecurityFilterChain(
 		HttpSecurity http,
-		LeakedPasswordsAuthenticationProvider leakedPasswordsAuthenticationProvider) throws Exception {
-		http.authenticationProvider(leakedPasswordsAuthenticationProvider)
+		LeakedPasswordsAuthenticationProvider leakedPasswordsAuthenticationProvider,
+		WebAuthnAuthenticationProvider webAuthnAuthenticationProvider,
+		WebAuthnAuthenticationDetailsSource webAuthnAuthenticationDetailsSource) throws Exception {
+
+		http
+			.authenticationProvider(leakedPasswordsAuthenticationProvider)
+			.authenticationProvider(webAuthnAuthenticationProvider)
+			.csrf(csrf -> csrf.ignoringRequestMatchers("/webauthn/begin"))
 			.authorizeHttpRequests((authorize) -> authorize
-				.requestMatchers("/main.css", "/login").permitAll().anyRequest().authenticated())
-			// Form login handles the redirect to the login page from the authorization server filter chain
-			.formLogin(formLogin -> formLogin.loginPage("/login").permitAll());
+				.requestMatchers(
+					"/main.css",
+					"/login",
+					"/webauthn/begin",
+					"/error",
+					"/favicon.ico",
+					"/.well-known/**"
+				)
+				.permitAll()
+				.anyRequest().authenticated())
+			.formLogin(formLogin -> formLogin
+				.loginPage("/login")
+				.authenticationDetailsSource(webAuthnAuthenticationDetailsSource)
+				.permitAll());
 
 		return http.build();
 	}
@@ -120,5 +139,4 @@ public class AuthorizationServerConfiguration {
 			return new OidcUserInfo(principal.getToken().getClaims());
 		};
 	}
-
 }

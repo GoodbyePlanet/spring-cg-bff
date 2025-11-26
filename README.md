@@ -6,21 +6,13 @@
 
  - java 21 installed
 
-Update **/etc/hosts**
-```
-127.0.0.1 auth-server
-127.0.0.1 secure-resource
-```
-This is required when running services via docker containers, and until I figure out how to make it running
-without changing **hosts** file
-
 #### To start all services
 ```
 ./build-and-run.sh
 ```
 This will build all backend modules, create and run docker containers
 
-Build and run **fe-client**
+If you would like to build and run **fe-client**
 ```
 cd fe-client
 cp .env.example .env.development

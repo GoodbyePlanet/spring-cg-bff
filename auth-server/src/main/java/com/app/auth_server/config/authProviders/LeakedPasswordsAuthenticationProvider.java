@@ -1,4 +1,4 @@
-package com.app.auth_server.config.auth_provider;
+package com.app.auth_server.config.authProviders;
 
 import com.app.auth_server.service.LeakedPasswordsService;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +9,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,9 +41,16 @@ public class LeakedPasswordsAuthenticationProvider implements AuthenticationProv
 
 		boolean leaked = leakedPasswordsService.isPasswordLeaked(rawPassword);
 
-		if (leaked) {
-			((UsernamePasswordAuthenticationToken) auth)
-				.setDetails(new HashMap<>(Map.of("passwordLeaked", true)));
+		if (auth instanceof UsernamePasswordAuthenticationToken token) {
+			if (leaked) {
+				token.setDetails(new HashMap<>(Map.of("passwordLeaked", true)));
+			} else {
+				if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
+					token.setDetails(new WebAuthenticationDetails(attributes.getRequest()));
+				} else {
+					token.setDetails(null);
+				}
+			}
 		}
 
 		return auth;

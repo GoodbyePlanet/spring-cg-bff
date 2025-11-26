@@ -9,22 +9,24 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.oauth2.client.oidc.web.server.logout.OidcClientInitiatedServerLogoutSuccessHandler;
-import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.server.DelegatingServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
+import org.springframework.security.web.server.authentication.logout.RedirectServerLogoutSuccessHandler;
 import org.springframework.security.web.server.authentication.logout.ServerLogoutSuccessHandler;
 import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository;
 import org.springframework.security.web.server.csrf.CsrfToken;
 import org.springframework.security.web.server.csrf.ServerCsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.server.util.matcher.MediaTypeServerWebExchangeMatcher;
 import org.springframework.web.server.WebFilter;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.util.List;
 
 @Slf4j
@@ -35,18 +37,20 @@ public class SecurityConfiguration {
 	@Value("${fe-app.base-uri}")
 	private String feAppBaseUrl;
 
-	@Bean
-	public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http,
-		ReactiveClientRegistrationRepository clientRegistrationRepository) {
+	@Value("${oauth2.auth-server-url}")
+	private String authServerUrl;
 
+	@Bean
+	public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
 		CookieServerCsrfTokenRepository cookieCsrfTokenRepository = CookieServerCsrfTokenRepository.withHttpOnlyFalse();
 		ServerCsrfTokenRequestAttributeHandler csrfTokenRequestHandler = new ServerCsrfTokenRequestAttributeHandler();
 		RedirectServerAuthenticationSuccessHandler redirectSuccessHandler =
 			new RedirectServerAuthenticationSuccessHandler(feAppBaseUrl);
 
 		http.authorizeExchange(auth -> auth
-				.anyExchange()
-				.authenticated())
+				// Permit /login to avoid loops if fallback happens
+				.pathMatchers("/login").permitAll()
+				.anyExchange().authenticated())
 			.cors(Customizer.withDefaults())
 			.csrf(csrf -> csrf
 				.csrfTokenRepository(cookieCsrfTokenRepository)
@@ -56,16 +60,32 @@ public class SecurityConfiguration {
 			.oauth2Login(oauth2Login ->
 				oauth2Login.authenticationSuccessHandler(redirectSuccessHandler))
 			.oauth2Client(Customizer.withDefaults())
-			.logout(logout -> logout.logoutSuccessHandler(logoutSuccessHandler(clientRegistrationRepository)));
+			.logout(logout -> logout
+				.logoutSuccessHandler(manualOidcLogoutHandler())
+			);
 
 		return http.build();
 	}
 
-	@Bean
-	public ServerLogoutSuccessHandler logoutSuccessHandler(ReactiveClientRegistrationRepository repo) {
-		OidcClientInitiatedServerLogoutSuccessHandler handler = new OidcClientInitiatedServerLogoutSuccessHandler(repo);
-		handler.setPostLogoutRedirectUri(feAppBaseUrl);
-		return handler;
+	private ServerLogoutSuccessHandler manualOidcLogoutHandler() {
+		return (exchange, authentication) -> {
+			String idToken = "";
+			if (authentication.getPrincipal() instanceof OidcUser user) {
+				idToken = user.getIdToken().getTokenValue();
+			}
+
+			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(authServerUrl + "/connect/logout")
+				.queryParam("post_logout_redirect_uri", feAppBaseUrl + "/");
+
+			if (!idToken.isEmpty()) {
+				builder.queryParam("id_token_hint", idToken);
+			}
+
+			RedirectServerLogoutSuccessHandler redirectHandler = new RedirectServerLogoutSuccessHandler();
+			redirectHandler.setLogoutSuccessUrl(URI.create(builder.build().toUriString()));
+
+			return redirectHandler.onLogoutSuccess(exchange, authentication);
+		};
 	}
 
 	@Bean

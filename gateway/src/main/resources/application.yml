@@ -1,12 +1,17 @@
 server:
   port: 8081
+  servlet:
+    session:
+      cookie:
+        domain: localhost
 
 fe-app:
   base-uri: ${FE_APP_BASE_URL:http://localhost:5173}
 
 oauth2:
   secure-resource-url: ${SECURE_RESOURCE_URL:http://secure-resource:9100}
-  auth-server-url: ${AUTH_SERVER_URL:http://auth-server:9000}
+  auth-server-url: ${AUTH_SERVER_URL:http://localhost/auth}
+  auth-server-internal-url: ${AUTH_SERVER_INTERNAL_URL:http://auth-server:9000}
   passkeys-service-url: ${PASSKEYS_SERVICE_URL:http://passkeys-service:8085}
 
 logging:

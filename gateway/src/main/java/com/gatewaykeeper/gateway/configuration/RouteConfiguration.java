@@ -11,17 +11,17 @@ import org.springframework.context.annotation.Configuration;
 public class RouteConfiguration {
 
 	private final String secureResourceUrl;
-	private final String authServerUrl;
+	private final String authServerInternalUrl;
 	private final String passkeysServiceUrl;
 	private final TokenRelayGatewayFilterFactory tokenRelay;
 
 	public RouteConfiguration(TokenRelayGatewayFilterFactory tokenRelay,
 		@Value("${oauth2.secure-resource-url}") String secureResourceUrl,
-		@Value("${oauth2.auth-server-url}") String authServerUrl,
+		@Value("${oauth2.auth-server-internal-url}") String authServerInternalUrl,
 		@Value("${oauth2.passkeys-service-url}") String passkeysServiceUrl) {
 		this.tokenRelay = tokenRelay;
 		this.secureResourceUrl = secureResourceUrl;
-		this.authServerUrl = authServerUrl;
+		this.authServerInternalUrl = authServerInternalUrl;
 		this.passkeysServiceUrl = passkeysServiceUrl;
 	}
 
@@ -33,9 +33,11 @@ public class RouteConfiguration {
 					.removeRequestHeader("Cookie")) // Prevents cookie being sent downstream
 				.uri(secureResourceUrl))
 			.route("userinfo", r -> r.path("/userinfo")
-				.filters(f -> f.filters(tokenRelay.apply())
+				.filters(f -> f
+					.rewritePath("/userinfo", "/auth/userinfo")
+					.filters(tokenRelay.apply())
 					.removeRequestHeader("Cookie"))
-				.uri(authServerUrl))
+				.uri(authServerInternalUrl))
 			.route("registration-begin", r -> r.path("/registration-begin")
 				.filters(f -> f
 					.rewritePath("/registration-begin", "/api/register/begin")

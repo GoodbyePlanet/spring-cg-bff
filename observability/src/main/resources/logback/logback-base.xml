@@ -29,7 +29,7 @@
 	</appender>
 
 	<root level="INFO">
-		<appender-ref ref="LOKI" />
+<!--		<appender-ref ref="LOKI" />-->
 		<appender-ref ref="STDOUT" />
 	</root>
 </configuration>
