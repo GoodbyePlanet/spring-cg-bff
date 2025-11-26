@@ -2,8 +2,6 @@ package com.app.auth_server.webauthn;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -17,11 +15,10 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
-@Service
 @Slf4j
+@Service
 public class WebAuthnService {
 
 	private static final String PASSKEY_SESSION_COOKIE_NAME = "sid";
@@ -52,7 +49,6 @@ public class WebAuthnService {
 		final String url = passkeysServiceUrl + "/api/authenticate/finish";
 
 		String sidCookieValue = getSidCookieValue();
-		log.info("SID COOKIE: {}", sidCookieValue);
 		HttpHeaders headers = new HttpHeaders();
 
 		if (sidCookieValue != null) {

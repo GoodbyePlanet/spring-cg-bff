@@ -9,8 +9,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.oauth2.client.oidc.web.server.logout.OidcClientInitiatedServerLogoutSuccessHandler;
-import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.server.DelegatingServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.SecurityWebFilterChain;
@@ -43,17 +41,7 @@ public class SecurityConfiguration {
 	private String authServerUrl;
 
 	@Bean
-	public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http,
-		ReactiveClientRegistrationRepository clientRegistrationRepository) {
-
-//		// 1. Create the OIDC Handler
-//		OidcClientInitiatedServerLogoutSuccessHandler oidcLogoutHandler =
-//			new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository);
-//
-//		// 2. Configure the redirect URI (Auth Server will send user here after logout)
-//		// Ensure this matches what is registered in Auth Server!
-//		oidcLogoutHandler.setPostLogoutRedirectUri("{baseUrl}/");
-
+	public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
 		CookieServerCsrfTokenRepository cookieCsrfTokenRepository = CookieServerCsrfTokenRepository.withHttpOnlyFalse();
 		ServerCsrfTokenRequestAttributeHandler csrfTokenRequestHandler = new ServerCsrfTokenRequestAttributeHandler();
 		RedirectServerAuthenticationSuccessHandler redirectSuccessHandler =
@@ -73,7 +61,6 @@ public class SecurityConfiguration {
 				oauth2Login.authenticationSuccessHandler(redirectSuccessHandler))
 			.oauth2Client(Customizer.withDefaults())
 			.logout(logout -> logout
-				// 3. EXPLICITLY register the handler here
 				.logoutSuccessHandler(manualOidcLogoutHandler())
 			);
 
@@ -82,20 +69,15 @@ public class SecurityConfiguration {
 
 	private ServerLogoutSuccessHandler manualOidcLogoutHandler() {
 		return (exchange, authentication) -> {
-			// Construct the URL: http://auth.localhost/connect/logout?post_logout_redirect_uri=http://localhost/
 			String idToken = "";
 			if (authentication.getPrincipal() instanceof OidcUser user) {
 				idToken = user.getIdToken().getTokenValue();
 			}
+
 			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(authServerUrl + "/connect/logout")
 				.queryParam("post_logout_redirect_uri", feAppBaseUrl + "/");
 
-			log.info("Logging out with principal: {}", authentication.getPrincipal());
-			log.info("Logging out with principal name: {}", authentication.getName());
-			log.info("Logging out with principal authorities: {}", authentication.getAuthorities());
-			log.info("TOKEN {}", idToken);
 			if (!idToken.isEmpty()) {
-				log.info("Logging out with ID Token: {}", idToken);
 				builder.queryParam("id_token_hint", idToken);
 			}
 
@@ -105,13 +87,6 @@ public class SecurityConfiguration {
 			return redirectHandler.onLogoutSuccess(exchange, authentication);
 		};
 	}
-
-//	@Bean
-//	public ServerLogoutSuccessHandler logoutSuccessHandler(ReactiveClientRegistrationRepository repo) {
-//		OidcClientInitiatedServerLogoutSuccessHandler handler = new OidcClientInitiatedServerLogoutSuccessHandler(repo);
-//		handler.setPostLogoutRedirectUri("{baseUrl}/");
-//		return handler;
-//	}
 
 	@Bean
 	WebFilter csrfCookieWebFilter() {

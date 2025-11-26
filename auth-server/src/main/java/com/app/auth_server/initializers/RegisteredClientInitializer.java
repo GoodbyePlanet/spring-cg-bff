@@ -46,7 +46,7 @@ public class RegisteredClientInitializer implements CommandLineRunner {
 				.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
 				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
 				.redirectUri(gatewayUrl + "/login/oauth2/code/gateway")
-				.postLogoutRedirectUri("http://localhost/")
+				.postLogoutRedirectUri(feClientUrl)
 				.scope(OidcScopes.OPENID)
 				.scope(OidcScopes.PROFILE)
 				.scope("resource.read")

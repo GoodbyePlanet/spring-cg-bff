@@ -19,7 +19,6 @@ const App: React.FC = () => {
   const [registeredPasskeys, setRegisteredPasskeys] = useState<RegisteredPasskey[]>([]);
 
   useEffect(() => {
-    console.log("BACKEND URL", backendBaseUrl);
     getUserInfo();
   }, []);
 

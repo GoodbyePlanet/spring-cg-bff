@@ -3,11 +3,8 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 COPY . .
-ARG VITE_AUTH_URL
 ARG VITE_AUTH_BFF
-ENV VITE_AUTH_URL=$VITE_AUTH_URL
 ENV VITE_AUTH_BFF=$VITE_AUTH_BFF
-RUN echo "Building with VITE_AUTH_BFF=$VITE_AUTH_BFF"
 
 RUN yarn build
 

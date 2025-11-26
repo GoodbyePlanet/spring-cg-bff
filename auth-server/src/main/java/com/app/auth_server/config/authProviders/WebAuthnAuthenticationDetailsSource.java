@@ -1,4 +1,4 @@
-package com.app.auth_server.config.web_authn_auth_provider;
+package com.app.auth_server.config.authProviders;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.AuthenticationDetailsSource;

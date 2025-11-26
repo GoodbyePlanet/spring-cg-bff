@@ -19,7 +19,6 @@
     </div>
 
     <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-        <!-- Error Message -->
         <div th:if="${param.error}" class="mb-4 rounded-md bg-red-50 p-4">
             <div class="flex">
                 <div class="ml-3">
@@ -29,7 +28,6 @@
         </div>
 
         <form id="login-form" class="space-y-6" th:action="@{/login}" method="POST">
-            <!-- Username Field -->
             <div>
                 <label for="username" class="block text-sm font-medium leading-6 text-gray-900">Username</label>
                 <div class="mt-2">
@@ -38,7 +36,6 @@
                 </div>
             </div>
 
-            <!-- Password Field (Hidden Initially) -->
             <div id="password-section" class="hidden">
                 <label for="password" class="block text-sm font-medium leading-6 text-gray-900">Password</label>
                 <div class="mt-2">
@@ -105,7 +102,6 @@
             });
 
             if (!res.ok) {
-                // PASSKEY FAIL/NOT FOUND → Show the password field
                 switchToPasswordMode();
                 return;
             }

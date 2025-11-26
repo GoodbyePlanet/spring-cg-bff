@@ -1,4 +1,4 @@
-package com.app.auth_server.config.leaked_passwords_auth_provider;
+package com.app.auth_server.config.authProviders;
 
 import com.app.auth_server.service.LeakedPasswordsService;
 import lombok.extern.slf4j.Slf4j;

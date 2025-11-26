@@ -77,7 +77,7 @@ services:
       MARIADB_PASSWORD: oauth
       SPRING_APPLICATION_NAME: auth-server
       SERVER_SERVLET_CONTEXT_PATH: /auth
-      FE_APP_BASE_URL: http://localhost
+      FE_APP_BASE_URL: http://localhost/
       AUTH_SERVER_URL: http://localhost/auth
       GATEWAY_CLIENT_URL: http://localhost
       LEAKED_PASSWORDS_API_URL: http://leaked-passwords-api:8083
@@ -88,7 +88,6 @@ services:
       - "traefik.http.services.auth.loadbalancer.server.port=9000"
     networks:
       - default
-      - observability
 
   gateway:
     build:
@@ -103,12 +102,13 @@ services:
     environment:
       SPRING_APPLICATION_NAME: gateway
       AUTH_SERVER_URL: http://localhost/auth
+      AUTH_SERVER_INTERNAL_URL: http://auth-server:9000
       FE_APP_BASE_URL: http://localhost
       SECURE_RESOURCE_URL: http://secure-resource:9100
       PASSKEYS_SERVICE_URL: http://passkeys-service:8085
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gateway.rule=Host(`localhost`) && (PathPrefix(`/bff`) || PathPrefix(`/login`) || PathPrefix(`/oauth2`) || PathPrefix(`/logout`) || PathPrefix(`/userinfo`) || PathPrefix(`/resource`) || PathPrefix(`/registration-begin`) || PathPrefix(`/registration-finish`) || PathPrefix(`/user-passkeys`))"
+      - "traefik.http.routers.gateway.rule=Host(`localhost`) && (PathPrefix(`/login`) || PathPrefix(`/oauth2`) || PathPrefix(`/logout`) || PathPrefix(`/userinfo`) || PathPrefix(`/resource`) || PathPrefix(`/registration-begin`) || PathPrefix(`/registration-finish`) || PathPrefix(`/user-passkeys`))"
       - "traefik.http.services.gateway.loadbalancer.server.port=8081"
     networks:
       - default
@@ -145,7 +145,6 @@ services:
       JWT_SET_URI: http://auth-server:9000/auth/oauth2/jwks
     networks:
       - default
-      - observability
 
 volumes:
   mariadb_data:
@@ -153,5 +152,3 @@ volumes:
 
 networks:
   default:
-  observability:
-    external: true

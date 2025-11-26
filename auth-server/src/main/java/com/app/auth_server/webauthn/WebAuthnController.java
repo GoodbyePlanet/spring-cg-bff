@@ -32,7 +32,6 @@ public class WebAuthnController {
 
 		if (cookies != null) {
 			for (String cookie : cookies) {
-				log.info("Adding Set-Cookie header: {}", cookie);
 				responseBuilder.header(HttpHeaders.SET_COOKIE, cookie);
 			}
 		}

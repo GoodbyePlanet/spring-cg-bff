@@ -1,4 +1,4 @@
-package com.app.auth_server.config.web_authn_auth_provider;
+package com.app.auth_server.config.authProviders;
 
 import com.app.auth_server.webauthn.WebAuthnException;
 import com.app.auth_server.webauthn.WebAuthnService;
@@ -32,30 +32,15 @@ public class WebAuthnAuthenticationProvider implements AuthenticationProvider {
 		log.info("Attempting WebAuthn authentication");
 		if (authentication.getDetails() instanceof WebAuthnAuthenticationDetails details
 			&& details.isWebAuthnRequest()) {
+			log.debug("WebAuthn request found");
 
-			log.info("WebAuthn request found");
 			String username = authentication.getName();
-			log.debug("Attempting WebAuthn authentication for user: {}", username);
-
-			Map<String, Object> responseMap = new HashMap<>();
-			responseMap.put("authenticatorData", details.getAuthenticatorData());
-			responseMap.put("clientDataJSON", details.getClientDataJSON());
-			responseMap.put("signature", details.getSignature());
-			String userHandle = details.getUserHandle();
-			responseMap.put("userHandle", (userHandle != null && !userHandle.isEmpty()) ? userHandle : null);
-
-			Map<String, Object> finishBody = new HashMap<>();
-			finishBody.put("id", details.getId());
-			finishBody.put("rawId", details.getRawId());
-			finishBody.put("type", details.getType());
-			finishBody.put("authenticatorAttachment", details.getAuthenticatorAttachment());
-			finishBody.put("response", responseMap);
+			Map<String, Object> body = finishAuthenticationRequestBody(details);
 
 			try {
-				String response = webAuthnService.finishAuthentication(finishBody);
+				String response = webAuthnService.finishAuthentication(body);
 				log.debug("WebAuthn authentication successful: {}", response);
 				UserDetails user = userDetailsService.loadUserByUsername(username);
-
 				UsernamePasswordAuthenticationToken token = UsernamePasswordAuthenticationToken.authenticated(
 					user,
 					null,
@@ -65,18 +50,17 @@ public class WebAuthnAuthenticationProvider implements AuthenticationProvider {
 				if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes) {
 					token.setDetails(new WebAuthenticationDetails(attributes.getRequest()));
 				}
-				return token;
 
+				return token;
 			} catch (WebAuthnException e) {
 				log.error("WebAuthn validation failed", e);
 				throw new BadCredentialsException("Invalid Passkey", e);
 			}
 		}
-
 		log.debug("No WebAuthn request found, fallback to standard authentication");
 
 		// If no WebAuthn data is present, return null to let DaoAuthenticationProvider
-		// handle standard password checking.
+		// handle standard password authentication.
 		return null;
 	}
 
@@ -84,4 +68,22 @@ public class WebAuthnAuthenticationProvider implements AuthenticationProvider {
 	public boolean supports(Class<?> authentication) {
 		return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
 	}
+
+	private static Map<String, Object> finishAuthenticationRequestBody(WebAuthnAuthenticationDetails details) {
+		Map<String, Object> responseMap = new HashMap<>();
+		responseMap.put("authenticatorData", details.getAuthenticatorData());
+		responseMap.put("clientDataJSON", details.getClientDataJSON());
+		responseMap.put("signature", details.getSignature());
+		String userHandle = details.getUserHandle();
+		responseMap.put("userHandle", (userHandle != null && !userHandle.isEmpty()) ? userHandle : null);
+
+		Map<String, Object> finishBody = new HashMap<>();
+		finishBody.put("id", details.getId());
+		finishBody.put("rawId", details.getRawId());
+		finishBody.put("type", details.getType());
+		finishBody.put("authenticatorAttachment", details.getAuthenticatorAttachment());
+		finishBody.put("response", responseMap);
+		return finishBody;
+	}
+
 }

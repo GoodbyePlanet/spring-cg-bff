@@ -1,8 +1,8 @@
 package com.app.auth_server.config;
 
-import com.app.auth_server.config.leaked_passwords_auth_provider.LeakedPasswordsAuthenticationProvider;
-import com.app.auth_server.config.web_authn_auth_provider.WebAuthnAuthenticationDetailsSource;
-import com.app.auth_server.config.web_authn_auth_provider.WebAuthnAuthenticationProvider;
+import com.app.auth_server.config.authProviders.LeakedPasswordsAuthenticationProvider;
+import com.app.auth_server.config.authProviders.WebAuthnAuthenticationDetailsSource;
+import com.app.auth_server.config.authProviders.WebAuthnAuthenticationProvider;
 import com.app.auth_server.jpa.service.authorization.JpaAuthorizationService;
 import com.app.auth_server.jpa.service.authorizationconsent.JpaAuthorizationConsentService;
 import com.app.auth_server.jpa.service.client.JpaClientRepository;
@@ -100,8 +100,7 @@ public class AuthorizationServerConfiguration {
 					"/webauthn/begin",
 					"/error",
 					"/favicon.ico",
-					"/.well-known/**",
-					"/assets/**"
+					"/.well-known/**"
 				)
 				.permitAll()
 				.anyRequest().authenticated())
@@ -140,5 +139,4 @@ public class AuthorizationServerConfiguration {
 			return new OidcUserInfo(principal.getToken().getClaims());
 		};
 	}
-
 }
