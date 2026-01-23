@@ -36,7 +36,7 @@ yarn dev
 ```shell
 cd leaked-passwords-api
 docker build -t leaked-passwords-api .
-docker run --env-file .env.development -e APP_ENV=development -e RUNNING_IN_DOCKER=true -p 8083:8083 --network spring-cg-bff_default --name leaked-passwords-api leaked-passwords-api
+docker run -e GIN_MODE=release -e APP_ENV=development -p 8083:8083 --network spring-cg-bff_default --name leaked-passwords-api leaked-passwords-api
 ```
 
 - **passkeys-service** - Service for WebAuthn passwordless authentication
